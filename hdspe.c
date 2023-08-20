@@ -31,6 +31,9 @@
  * Supported cards: AIO, RayDAT.
  */
 
+#include <sys/types.h>
+#include <sys/sysctl.h>
+
 #include <dev/sound/pcm/sound.h>
 #include <dev/sound/pci/hdspe.h>
 #include <dev/sound/chip.h>
@@ -41,6 +44,37 @@
 #include <mixer_if.h>
 
 SND_DECLARE_FILE("$FreeBSD$");
+
+struct hdspe_sync_port {
+	char		*name;
+	uint32_t	master;
+	uint32_t	portnr;
+};
+
+static struct hdspe_sync_port hdspe_sync_ports_rd[] = {
+	{ "internal", 1,  0 },
+	{ "word",     0,  0 },
+	{ "aes",      0,  1 },
+	{ "spdif",    0,  2 },
+	{ "adat1",    0,  3 },
+	{ "adat2",    0,  4 },
+	{ "adat3",    0,  5 },
+	{ "adat4",    0,  6 },
+	{ "tco",      0,  9 },
+	{ "sync_in",  0, 10 },
+	{ NULL,       0,  0 },
+};
+
+static struct hdspe_sync_port hdspe_sync_ports_aio[] = {
+	{ "internal", 1,  0 },
+	{ "word",     0,  0 },
+	{ "aes",      0,  1 },
+	{ "spdif",    0,  2 },
+	{ "adat",     0,  3 },
+	{ "tco",      0,  9 },
+	{ "sync_in",  0, 10 },
+	{ NULL,       0,  0 },
+};
 
 static struct hdspe_channel chan_map_aio[] = {
 	{  0,  1,   "line", 1, 1 },
@@ -227,6 +261,62 @@ hdspe_map_dmabuf(struct sc_info *sc)
 }
 
 static int
+hdspe_sysctl_clock_source(SYSCTL_HANDLER_ARGS)
+{
+	struct sc_info *sc = oidp->oid_arg1;
+	struct hdspe_sync_port *ports_table, *port;
+	char buf[16];
+	int error;
+	uint32_t master, portnr;
+
+	/* Select sync ports table for device type. */
+	if (sc->type == AIO) {
+		ports_table = hdspe_sync_ports_aio;
+	} else if (sc->type == RAYDAT) {
+		ports_table = hdspe_sync_ports_rd;
+	} else {
+		return (ENXIO);
+	}
+
+	/* Extract preferred clock source from settings register. */
+	master = sc->settings_register & 0x01;
+	portnr = (sc->settings_register >> 1) & 0x0f;
+	for (port = ports_table; port->name != NULL; ++port) {
+		if (port->master == master && port->portnr == portnr) {
+			break;
+		}
+	}
+	buf[0] = 0;
+	if (port->name != NULL) {
+		strlcpy(buf, port->name, sizeof(buf));
+	}
+
+	/* Process sysctl string request. */
+	error = sysctl_handle_string(oidp, buf, sizeof(buf), req);
+	if (error != 0 || req->newptr == NULL)
+		return (error);
+
+	/* Find clock source matching the sysctl string. */
+	for (port = ports_table; port->name != NULL; ++port) {
+		if (strncasecmp(buf, port->name, sizeof(buf)) == 0) {
+			break;
+		}
+	}
+
+	/* Set preferred clock source in settings register. */
+	if (port->name != NULL) {
+		master = port->master;
+		portnr = port->portnr;
+		snd_mtxlock(sc->lock);
+		sc->settings_register &= ~(0x01 | (0x0f << 1));
+		sc->settings_register |= (master | (portnr << 1));
+		hdspe_write_4(sc, HDSPE_SETTINGS_REG, sc->settings_register);
+		snd_mtxunlock(sc->lock);
+	}
+	return (0);
+}
+
+static int
 hdspe_probe(device_t dev)
 {
 	uint32_t rev;
@@ -337,6 +427,11 @@ hdspe_attach(device_t dev)
 	}
 
 	hdspe_map_dmabuf(sc);
+
+	SYSCTL_ADD_PROC(device_get_sysctl_ctx(dev),
+	    SYSCTL_CHILDREN(device_get_sysctl_tree(dev)), OID_AUTO,
+	    "clock_source", CTLTYPE_STRING | CTLFLAG_RWTUN | CTLFLAG_MPSAFE,
+	    sc, 0, hdspe_sysctl_clock_source, "A", "preferred clock source");
 
 	return (bus_generic_attach(dev));
 }
