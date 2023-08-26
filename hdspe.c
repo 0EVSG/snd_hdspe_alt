@@ -261,11 +261,11 @@ hdspe_map_dmabuf(struct sc_info *sc)
 }
 
 static int
-hdspe_sysctl_clock_source(SYSCTL_HANDLER_ARGS)
+hdspe_sysctl_clock_preference(SYSCTL_HANDLER_ARGS)
 {
 	struct sc_info *sc = oidp->oid_arg1;
 	struct hdspe_sync_port *ports_table, *port;
-	char buf[16];
+	char buf[16] = "invalid";
 	int error;
 	uint32_t master, portnr;
 
@@ -286,7 +286,6 @@ hdspe_sysctl_clock_source(SYSCTL_HANDLER_ARGS)
 			break;
 		}
 	}
-	buf[0] = 0;
 	if (port->name != NULL) {
 		strlcpy(buf, port->name, sizeof(buf));
 	}
@@ -314,6 +313,77 @@ hdspe_sysctl_clock_source(SYSCTL_HANDLER_ARGS)
 		snd_mtxunlock(sc->lock);
 	}
 	return (0);
+}
+
+static int
+hdspe_sysctl_clock_source(SYSCTL_HANDLER_ARGS)
+{
+	struct sc_info *sc = oidp->oid_arg1;
+	struct hdspe_sync_port *ports_table, *port;
+	char buf[16] = "invalid";
+	uint32_t status = 0, portnr, master;
+
+	/* Select sync ports table for device type. */
+	if (sc->type == AIO) {
+		ports_table = hdspe_sync_ports_aio;
+	} else if (sc->type == RAYDAT) {
+		ports_table = hdspe_sync_ports_rd;
+	} else {
+		return (ENXIO);
+	}
+
+	/* Read current clock source from status register. */
+	snd_mtxlock(sc->lock);
+	master = sc->settings_register & 0x01;
+	if (master != 1) {
+		status = hdspe_read_4(sc, 64);
+	}
+	snd_mtxunlock(sc->lock);
+	portnr = (status >> 28) & 0x0f;
+	if (portnr == 15) {
+		master = 1;
+		portnr = 0;
+	}
+
+	/* Translate clock source to port name. */
+	for (port = ports_table; port->name != NULL; ++port) {
+		if (port->portnr == portnr && port->master == master) {
+			break;
+		}
+	}
+
+	/* Process sysctl string request. */
+	if (port->name != NULL) {
+		strlcpy(buf, port->name, sizeof(buf));
+	}
+	return sysctl_handle_string(oidp, buf, sizeof(buf), req);
+}
+
+static int
+hdspe_sysctl_clock_list(SYSCTL_HANDLER_ARGS)
+{
+	struct sc_info *sc = oidp->oid_arg1;
+	struct hdspe_sync_port *ports_table, *port;
+	char buf[256];
+	int n = 0;
+
+	/* Select sync ports table for device type. */
+	if (sc->type == AIO) {
+		ports_table = hdspe_sync_ports_aio;
+	} else if (sc->type == RAYDAT) {
+		ports_table = hdspe_sync_ports_rd;
+	} else {
+		return (ENXIO);
+	}
+
+	/* List available sync ports. */
+	buf[0] = 0;
+	for (port = ports_table; port->name != NULL; ++port) {
+		if (n > 0)
+			n += strlcpy(buf + n, ",", sizeof(buf) - n);
+		n += strlcpy(buf + n, port->name, sizeof(buf) - n);
+	}
+	return sysctl_handle_string(oidp, buf, sizeof(buf), req);
 }
 
 static int
@@ -430,8 +500,21 @@ hdspe_attach(device_t dev)
 
 	SYSCTL_ADD_PROC(device_get_sysctl_ctx(dev),
 	    SYSCTL_CHILDREN(device_get_sysctl_tree(dev)), OID_AUTO,
-	    "clock_source", CTLTYPE_STRING | CTLFLAG_RWTUN | CTLFLAG_MPSAFE,
-	    sc, 0, hdspe_sysctl_clock_source, "A", "preferred clock source");
+	    "clock_source", CTLTYPE_STRING | CTLFLAG_RD | CTLFLAG_MPSAFE,
+	    sc, 0, hdspe_sysctl_clock_source, "A",
+	    "Currently effective clock source");
+
+	SYSCTL_ADD_PROC(device_get_sysctl_ctx(dev),
+	    SYSCTL_CHILDREN(device_get_sysctl_tree(dev)), OID_AUTO,
+	    "clock_preference", CTLTYPE_STRING | CTLFLAG_RW | CTLFLAG_MPSAFE,
+	    sc, 0, hdspe_sysctl_clock_preference, "A",
+	    "Set 'internal' (master) or preferred autosync clock source");
+
+	SYSCTL_ADD_PROC(device_get_sysctl_ctx(dev),
+	    SYSCTL_CHILDREN(device_get_sysctl_tree(dev)), OID_AUTO,
+	    "clock_list", CTLTYPE_STRING | CTLFLAG_RD | CTLFLAG_MPSAFE,
+	    sc, 0, hdspe_sysctl_clock_list, "A",
+	    "List of supported clock sources");
 
 	return (bus_generic_attach(dev));
 }
