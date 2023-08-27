@@ -97,13 +97,12 @@
 #define	HDSP_PhoneGainMinus6dB		(HDSP_PhoneGain0)
 #define	HDSP_PhoneGainMinus12dB		0
 
-#define	HDSPM_statusRegister		0
-#define	HDSPM_statusRegister2		192
-
 /* Settings */
 #define	HDSPE_SETTINGS_REG		0
 #define	HDSPE_CONTROL_REG		64
 #define	HDSPE_STATUS_REG		0
+#define	HDSPE_STATUS1_REG		64
+#define	HDSPE_STATUS2_REG		192
 #define	HDSPE_ENABLE			(1 << 0)
 #define	HDSPM_CLOCK_MODE_MASTER		(1 << 4)
 
@@ -127,6 +126,26 @@ struct hdspe_channel {
 	uint32_t	play;
 	uint32_t	rec;
 };
+
+/* Clock sources */
+#define HDSPE_SETTING_MASTER		1
+#define HDSPE_SETTING_CLOCK_MASK	0x1f
+#define hdspe_setting_clock(m, n)	((((n) & 0x0f) << 1) | ((m) & 0x01))
+#define HDSPE_STATUS1_CLOCK_MASK	(0x0f << 28)
+#define hdspe_status1_clock(n)		(((n) & 0x0f) << 28)
+
+struct hdspe_clock_source {
+	char		*name;
+	uint32_t	setting;
+	uint32_t	status;
+};
+
+#define HDSPE_CLOCK_SOURCE(namestr, master, settingnr, statusnr) \
+		{ \
+			.name = namestr, \
+			.setting = hdspe_setting_clock(master, settingnr), \
+			.status = hdspe_status1_clock(statusnr) \
+		}
 
 static MALLOC_DEFINE(M_HDSPE, "hdspe", "hdspe audio");
 
