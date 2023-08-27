@@ -32,7 +32,7 @@
  */
 
 #include <dev/sound/pcm/sound.h>
-#include <dev/sound/pci/hdspe.h>
+#include <hdspe.h>
 #include <dev/sound/chip.h>
 
 #include <dev/pci/pcireg.h>
