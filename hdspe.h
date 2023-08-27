@@ -138,13 +138,17 @@ struct hdspe_clock_source {
 	char		*name;
 	uint32_t	setting;
 	uint32_t	status;
+	uint32_t	lock_bit;
+	uint32_t	sync_bit;
 };
 
-#define HDSPE_CLOCK_SOURCE(namestr, master, settingnr, statusnr) \
+#define HDSPE_CLOCK_SOURCE(string, master, setting_nr, status_nr, lock, sync) \
 		{ \
-			.name = namestr, \
-			.setting = hdspe_setting_clock(master, settingnr), \
-			.status = hdspe_status1_clock(statusnr) \
+			.name = string, \
+			.setting = hdspe_setting_clock(master, setting_nr), \
+			.status = hdspe_status1_clock(status_nr), \
+			.lock_bit = lock, \
+			.sync_bit = sync \
 		}
 
 static MALLOC_DEFINE(M_HDSPE, "hdspe", "hdspe audio");

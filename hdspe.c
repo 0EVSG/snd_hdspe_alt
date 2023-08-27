@@ -46,28 +46,28 @@
 SND_DECLARE_FILE("$FreeBSD$");
 
 static struct hdspe_clock_source hdspe_clock_source_table_rd[] = {
-	HDSPE_CLOCK_SOURCE("internal", 1,  0, 15),
-	HDSPE_CLOCK_SOURCE("word",     0,  0,  0),
-	HDSPE_CLOCK_SOURCE("aes",      0,  1,  1),
-	HDSPE_CLOCK_SOURCE("spdif",    0,  2,  2),
-	HDSPE_CLOCK_SOURCE("adat1",    0,  3,  3),
-	HDSPE_CLOCK_SOURCE("adat2",    0,  4,  4),
-	HDSPE_CLOCK_SOURCE("adat3",    0,  5,  5),
-	HDSPE_CLOCK_SOURCE("adat4",    0,  6,  6),
-	HDSPE_CLOCK_SOURCE("tco",      0,  9,  9),
-	HDSPE_CLOCK_SOURCE("sync_in",  0, 10, 10),
-	HDSPE_CLOCK_SOURCE(NULL,       0,  0,  0),
+	HDSPE_CLOCK_SOURCE("internal", 1,  0, 15,       0,       0),
+	HDSPE_CLOCK_SOURCE("word",     0,  0,  0, 1 << 24, 1 << 25),
+	HDSPE_CLOCK_SOURCE("aes",      0,  1,  1,  1 << 0,  1 << 8),
+	HDSPE_CLOCK_SOURCE("spdif",    0,  2,  2,  1 << 1,  1 << 9),
+	HDSPE_CLOCK_SOURCE("adat1",    0,  3,  3,  1 << 2, 1 << 10),
+	HDSPE_CLOCK_SOURCE("adat2",    0,  4,  4,  1 << 3, 1 << 11),
+	HDSPE_CLOCK_SOURCE("adat3",    0,  5,  5,  1 << 4, 1 << 12),
+	HDSPE_CLOCK_SOURCE("adat4",    0,  6,  6,  1 << 5, 1 << 13),
+	HDSPE_CLOCK_SOURCE("tco",      0,  9,  9, 1 << 26, 1 << 27),
+	HDSPE_CLOCK_SOURCE("sync_in",  0, 10, 10,       0,       0),
+	HDSPE_CLOCK_SOURCE(NULL,       0,  0,  0,       0,       0),
 };
 
 static struct hdspe_clock_source hdspe_clock_source_table_aio[] = {
-	HDSPE_CLOCK_SOURCE("internal", 1,  0, 15),
-	HDSPE_CLOCK_SOURCE("word",     0,  0,  0),
-	HDSPE_CLOCK_SOURCE("aes",      0,  1,  1),
-	HDSPE_CLOCK_SOURCE("spdif",    0,  2,  2),
-	HDSPE_CLOCK_SOURCE("adat",     0,  3,  3),
-	HDSPE_CLOCK_SOURCE("tco",      0,  9,  9),
-	HDSPE_CLOCK_SOURCE("sync_in",  0, 10, 10),
-	HDSPE_CLOCK_SOURCE(NULL,       0,  0,  0),
+	HDSPE_CLOCK_SOURCE("internal", 1,  0, 15,       0,       0),
+	HDSPE_CLOCK_SOURCE("word",     0,  0,  0, 1 << 24, 1 << 25),
+	HDSPE_CLOCK_SOURCE("aes",      0,  1,  1,  1 << 0,  1 << 8),
+	HDSPE_CLOCK_SOURCE("spdif",    0,  2,  2,  1 << 1,  1 << 9),
+	HDSPE_CLOCK_SOURCE("adat",     0,  3,  3,  1 << 2, 1 << 10),
+	HDSPE_CLOCK_SOURCE("tco",      0,  9,  9, 1 << 26, 1 << 27),
+	HDSPE_CLOCK_SOURCE("sync_in",  0, 10, 10,       0,       0),
+	HDSPE_CLOCK_SOURCE(NULL,       0,  0,  0,       0,       0),
 };
 
 static struct hdspe_channel chan_map_aio[] = {
@@ -376,6 +376,48 @@ hdspe_sysctl_clock_list(SYSCTL_HANDLER_ARGS)
 }
 
 static int
+hdspe_sysctl_sync_status(SYSCTL_HANDLER_ARGS)
+{
+	struct sc_info *sc = oidp->oid_arg1;
+	struct hdspe_clock_source *clock_table, *clock;
+	char buf[256];
+	char *state;
+	int n = 0;
+	uint32_t status;
+
+	/* Select sync ports table for device type. */
+	if (sc->type == AIO) {
+		clock_table = hdspe_clock_source_table_aio;
+	} else if (sc->type == RAYDAT) {
+		clock_table = hdspe_clock_source_table_rd;
+	} else {
+		return (ENXIO);
+	}
+
+	/* Read current lock and sync bits from status register. */
+	snd_mtxlock(sc->lock);
+	status = hdspe_read_4(sc, HDSPE_STATUS1_REG);
+	snd_mtxunlock(sc->lock);
+
+	/* List clock sources with lock and sync state. */
+	for (clock = clock_table; clock->name != NULL; ++clock) {
+		if (clock->sync_bit != 0) {
+			if (n > 0)
+				n += strlcpy(buf + n, ",", sizeof(buf) - n);
+			state = "none";
+			if ((clock->sync_bit & status) != 0) {
+				state = "sync";
+			} else if ((clock->lock_bit & status) != 0) {
+				state = "lock";
+			}
+			n += snprintf(buf + n, sizeof(buf) - n, "%s(%s)",
+			    clock->name, state);
+		}
+	}
+	return sysctl_handle_string(oidp, buf, sizeof(buf), req);
+}
+
+static int
 hdspe_probe(device_t dev)
 {
 	uint32_t rev;
@@ -486,6 +528,12 @@ hdspe_attach(device_t dev)
 	}
 
 	hdspe_map_dmabuf(sc);
+
+	SYSCTL_ADD_PROC(device_get_sysctl_ctx(dev),
+	    SYSCTL_CHILDREN(device_get_sysctl_tree(dev)), OID_AUTO,
+	    "sync_status", CTLTYPE_STRING | CTLFLAG_RD | CTLFLAG_MPSAFE,
+	    sc, 0, hdspe_sysctl_sync_status, "A",
+	    "List clock source signal lock and sync status");
 
 	SYSCTL_ADD_PROC(device_get_sysctl_ctx(dev),
 	    SYSCTL_CHILDREN(device_get_sysctl_tree(dev)), OID_AUTO,
