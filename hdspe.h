@@ -118,12 +118,34 @@
 #define	HDSPE_CHANBUF_SIZE		(4 * HDSPE_CHANBUF_SAMPLES)
 #define	HDSPE_DMASEGSIZE		(HDSPE_CHANBUF_SIZE * HDSPE_MAX_SLOTS)
 
+#define	HDSPE_CHAN_AIO_LINE		(1 << 0)
+#define	HDSPE_CHAN_AIO_PHONE		(1 << 1)
+#define	HDSPE_CHAN_AIO_AES		(1 << 2)
+#define	HDSPE_CHAN_AIO_SPDIF		(1 << 3)
+#define	HDSPE_CHAN_AIO_ADAT		(1 << 4)
+#define	HDSPE_CHAN_AIO_ALL_REC		(HDSPE_CHAN_AIO_LINE | \
+					HDSPE_CHAN_AIO_AES | \
+					HDSPE_CHAN_AIO_SPDIF | \
+					HDSPE_CHAN_AIO_ADAT)
+#define	HDSPE_CHAN_AIO_ALL		(HDSPE_CHAN_AIO_ALL_REC | \
+					HDSPE_CHAN_AIO_PHONE) \
+
+#define	HDSPE_CHAN_RAY_AES		(1 << 5)
+#define	HDSPE_CHAN_RAY_SPDIF		(1 << 6)
+#define	HDSPE_CHAN_RAY_ADAT1		(1 << 7)
+#define	HDSPE_CHAN_RAY_ADAT2		(1 << 8)
+#define	HDSPE_CHAN_RAY_ADAT3		(1 << 9)
+#define	HDSPE_CHAN_RAY_ADAT4		(1 << 10)
+#define	HDSPE_CHAN_RAY_ALL		(HDSPE_CHAN_RAY_AES | \
+					HDSPE_CHAN_RAY_SPDIF | \
+					HDSPE_CHAN_RAY_ADAT1 | \
+					HDSPE_CHAN_RAY_ADAT2 | \
+					HDSPE_CHAN_RAY_ADAT3 | \
+					HDSPE_CHAN_RAY_ADAT4)
+
 struct hdspe_channel {
-	uint32_t	left;
-	uint32_t	right;
+	uint32_t	ports;
 	char		*descr;
-	uint32_t	play;
-	uint32_t	rec;
 };
 
 /* Clock sources */
@@ -152,10 +174,11 @@ struct sc_chinfo {
 	struct sc_pcminfo	*parent;
 
 	/* Channel information */
+	struct pcmchan_caps	*caps;
+	uint32_t	cap_fmts[4];
 	uint32_t	dir;
 	uint32_t	format;
-	uint32_t	lslot;
-	uint32_t	rslot;
+	uint32_t	ports;
 	uint32_t	lvol;
 	uint32_t	rvol;
 
