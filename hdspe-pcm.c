@@ -255,6 +255,40 @@ hdspe_stop_audio(struct sc_info *sc)
 	hdspe_write_4(sc, HDSPE_CONTROL_REG, sc->ctrl_register);
 }
 
+static void
+buffer_mux_write(uint32_t *dma, int dma_slot, uint32_t *pcm, int pos,
+    int samples, int slots, int channels)
+{
+	int slot;
+
+	dma += dma_slot * HDSPE_CHANBUF_SAMPLES;
+
+	for (; samples > 0; samples--) {
+		for (slot = 0; slot < slots; slot++) {
+			dma[slot * HDSPE_CHANBUF_SAMPLES + pos] =
+			    pcm[pos * channels + slot];
+		}
+		pos = (pos + 1) % HDSPE_CHANBUF_SAMPLES;
+	}
+}
+
+static void
+buffer_demux_read(uint32_t *dma, int dma_slot, uint32_t *pcm, int pos,
+    int samples, int slots, int channels)
+{
+	int slot;
+
+	dma += dma_slot * HDSPE_CHANBUF_SAMPLES;
+
+	for (; samples > 0; samples--) {
+		for (slot = 0; slot < slots; slot++) {
+			pcm[pos * channels + slot] =
+			    dma[slot * HDSPE_CHANBUF_SAMPLES + pos];
+		}
+		pos = (pos + 1) % HDSPE_CHANBUF_SAMPLES;
+	}
+}
+
 /* Multiplex / demultiplex: 2.0 <-> 2 x 1.0. */
 static void
 buffer_copy(struct sc_chinfo *ch)
@@ -279,6 +313,8 @@ buffer_copy(struct sc_chinfo *ch)
 
 	src /= 4; /* Bytes per sample. */
 	dst = src / n; /* Destination buffer n-times smaller. */
+
+#if 0
 
 	ssize = ch->size / 4;
 	dsize = ch->size / (4 * n);
@@ -305,6 +341,16 @@ buffer_copy(struct sc_chinfo *ch)
 		dst %= dsize;
 		src += n;
 		src %= ssize;
+	}
+
+#endif
+
+	if (ch->dir == PCMDIR_PLAY) {
+		buffer_mux_write(sc->pbuf, ch->lslot, ch->data, dst,
+		    sc->period * 2, 2, 2);
+	} else {
+		buffer_demux_read(sc->rbuf, ch->lslot, ch->data, dst,
+		    sc->period * 2, 2, 2);
 	}
 }
 
