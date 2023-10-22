@@ -71,47 +71,47 @@ static struct hdspe_clock_source hdspe_clock_source_table_aio[] = {
 };
 
 static struct hdspe_channel chan_map_aio[] = {
-	{  0,  1,   "line", 1, 1 },
-	{  6,  7,  "phone", 1, 0 },
-	{  8,  9,    "aes", 1, 1 },
-	{ 10, 11, "s/pdif", 1, 1 },
-	{ 12, 16,   "adat", 1, 1 },
+	{ HDSPE_CHAN_AIO_LINE,     "line", 1, 1 },
+	{ HDSPE_CHAN_AIO_PHONE,   "phone", 1, 0 },
+	{ HDSPE_CHAN_AIO_AES,       "aes", 1, 1 },
+	{ HDSPE_CHAN_AIO_SPDIF,  "s/pdif", 1, 1 },
+	{ HDSPE_CHAN_AIO_ADAT11,   "adat", 1, 1 },
 
 	/* Single or double speed. */
-	{ 14, 18,   "adat", 1, 1 },
+	{ HDSPE_CHAN_AIO_ADAT12,   "adat", 1, 1 },
 
 	/* Single speed only. */
-	{ 13, 15,   "adat", 1, 1 },
-	{ 17, 19,   "adat", 1, 1 },
+	{ HDSPE_CHAN_AIO_ADAT13,   "adat", 1, 1 },
+	{ HDSPE_CHAN_AIO_ADAT14,   "adat", 1, 1 },
 
-	{  0,  0,     NULL, 0, 0 },
+	{                     0,     NULL, 0, 0 },
 };
 
 static struct hdspe_channel chan_map_rd[] = {
-	{   0, 1,    "aes", 1, 1 },
-	{   2, 3, "s/pdif", 1, 1 },
-	{   4, 5,   "adat", 1, 1 },
-	{   6, 7,   "adat", 1, 1 },
-	{   8, 9,   "adat", 1, 1 },
-	{ 10, 11,   "adat", 1, 1 },
+	{ HDSPE_CHAN_RAY_AES,       "aes", 1, 1 },
+	{ HDSPE_CHAN_RAY_SPDIF,  "s/pdif", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT11,   "adat", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT12,   "adat", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT13,   "adat", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT14,   "adat", 1, 1 },
 
 	/* Single or double speed. */
-	{ 12, 13,   "adat", 1, 1 },
-	{ 14, 15,   "adat", 1, 1 },
-	{ 16, 17,   "adat", 1, 1 },
-	{ 18, 19,   "adat", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT21,   "adat", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT22,   "adat", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT23,   "adat", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT24,   "adat", 1, 1 },
 
 	/* Single speed only. */
-	{ 20, 21,   "adat", 1, 1 },
-	{ 22, 23,   "adat", 1, 1 },
-	{ 24, 25,   "adat", 1, 1 },
-	{ 26, 27,   "adat", 1, 1 },
-	{ 28, 29,   "adat", 1, 1 },
-	{ 30, 31,   "adat", 1, 1 },
-	{ 32, 33,   "adat", 1, 1 },
-	{ 34, 35,   "adat", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT31,   "adat", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT32,   "adat", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT33,   "adat", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT34,   "adat", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT41,   "adat", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT42,   "adat", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT43,   "adat", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT44,   "adat", 1, 1 },
 
-	{ 0,  0,      NULL, 0, 0 },
+	{                     0,     NULL, 0, 0 },
 };
 
 static void
