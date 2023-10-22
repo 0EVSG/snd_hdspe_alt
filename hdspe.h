@@ -118,9 +118,36 @@
 #define	HDSPE_CHANBUF_SIZE		(4 * HDSPE_CHANBUF_SAMPLES)
 #define	HDSPE_DMASEGSIZE		(HDSPE_CHANBUF_SIZE * HDSPE_MAX_SLOTS)
 
+#define HDSPE_CHAN_AIO_LINE		(1 << 0)
+#define HDSPE_CHAN_AIO_PHONE		(1 << 1)
+#define HDSPE_CHAN_AIO_AES		(1 << 2)
+#define HDSPE_CHAN_AIO_SPDIF		(1 << 3)
+#define HDSPE_CHAN_AIO_ADAT11		(1 << 4)
+#define HDSPE_CHAN_AIO_ADAT12		(1 << 5)
+#define HDSPE_CHAN_AIO_ADAT13		(1 << 6)
+#define HDSPE_CHAN_AIO_ADAT14		(1 << 7)
+
+#define HDSPE_CHAN_RAY_AES		(1 << 8)
+#define HDSPE_CHAN_RAY_SPDIF		(1 << 9)
+#define HDSPE_CHAN_RAY_ADAT11		(1 << 10)
+#define HDSPE_CHAN_RAY_ADAT12		(1 << 11)
+#define HDSPE_CHAN_RAY_ADAT13		(1 << 12)
+#define HDSPE_CHAN_RAY_ADAT14		(1 << 13)
+#define HDSPE_CHAN_RAY_ADAT21		(1 << 14)
+#define HDSPE_CHAN_RAY_ADAT22		(1 << 15)
+#define HDSPE_CHAN_RAY_ADAT23		(1 << 16)
+#define HDSPE_CHAN_RAY_ADAT24		(1 << 17)
+#define HDSPE_CHAN_RAY_ADAT31		(1 << 18)
+#define HDSPE_CHAN_RAY_ADAT32		(1 << 19)
+#define HDSPE_CHAN_RAY_ADAT33		(1 << 20)
+#define HDSPE_CHAN_RAY_ADAT34		(1 << 21)
+#define HDSPE_CHAN_RAY_ADAT41		(1 << 22)
+#define HDSPE_CHAN_RAY_ADAT42		(1 << 23)
+#define HDSPE_CHAN_RAY_ADAT43		(1 << 24)
+#define HDSPE_CHAN_RAY_ADAT44		(1 << 25)
+
 struct hdspe_channel {
-	uint32_t	left;
-	uint32_t	right;
+	uint32_t	ports;
 	char		*descr;
 	uint32_t	play;
 	uint32_t	rec;
@@ -154,8 +181,7 @@ struct sc_chinfo {
 	/* Channel information */
 	uint32_t	dir;
 	uint32_t	format;
-	uint32_t	lslot;
-	uint32_t	rslot;
+	uint32_t	ports;
 	uint32_t	lvol;
 	uint32_t	rvol;
 
