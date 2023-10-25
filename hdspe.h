@@ -187,6 +187,8 @@ struct sc_chinfo {
 	struct sc_pcminfo	*parent;
 
 	/* Channel information */
+	struct pcmchan_caps	*caps;
+	uint32_t	cap_fmts[4];
 	uint32_t	dir;
 	uint32_t	format;
 	uint32_t	ports;
