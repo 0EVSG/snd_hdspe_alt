@@ -75,43 +75,18 @@ static struct hdspe_channel chan_map_aio[] = {
 	{ HDSPE_CHAN_AIO_PHONE,   "phone", 1, 0 },
 	{ HDSPE_CHAN_AIO_AES,       "aes", 1, 1 },
 	{ HDSPE_CHAN_AIO_SPDIF,  "s/pdif", 1, 1 },
-	{ HDSPE_CHAN_AIO_ADAT11,   "adat", 1, 1 },
-
-	/* Single or double speed. */
-	{ HDSPE_CHAN_AIO_ADAT12,   "adat", 1, 1 },
-
-	/* Single speed only. */
-	{ HDSPE_CHAN_AIO_ADAT13,   "adat", 1, 1 },
-	{ HDSPE_CHAN_AIO_ADAT14,   "adat", 1, 1 },
-
-	{                     0,     NULL, 0, 0 },
+	{ HDSPE_CHAN_AIO_ADAT,     "adat", 1, 1 },
+	{                    0,      NULL, 0, 0 },
 };
 
 static struct hdspe_channel chan_map_rd[] = {
-	{ HDSPE_CHAN_RAY_AES,       "aes", 1, 1 },
-	{ HDSPE_CHAN_RAY_SPDIF,  "s/pdif", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT11,   "adat", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT12,   "adat", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT13,   "adat", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT14,   "adat", 1, 1 },
-
-	/* Single or double speed. */
-	{ HDSPE_CHAN_RAY_ADAT21,   "adat", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT22,   "adat", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT23,   "adat", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT24,   "adat", 1, 1 },
-
-	/* Single speed only. */
-	{ HDSPE_CHAN_RAY_ADAT31,   "adat", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT32,   "adat", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT33,   "adat", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT34,   "adat", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT41,   "adat", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT42,   "adat", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT43,   "adat", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT44,   "adat", 1, 1 },
-
-	{                     0,     NULL, 0, 0 },
+	{ HDSPE_CHAN_RAY_AES,      "aes", 1, 1 },
+	{ HDSPE_CHAN_RAY_SPDIF, "s/pdif", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT1,  "adat1", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT2,  "adat2", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT3,  "adat3", 1, 1 },
+	{ HDSPE_CHAN_RAY_ADAT4,  "adat4", 1, 1 },
+	{                    0,     NULL, 0, 0 },
 };
 
 static void
