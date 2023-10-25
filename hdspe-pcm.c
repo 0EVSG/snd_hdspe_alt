@@ -102,52 +102,22 @@ hdspe_channel_slot_base(unsigned int adat_width, uint32_t port)
 		return (8);
 	if (port & HDSPE_CHAN_AIO_SPDIF)
 		return (10);
-	if (port & HDSPE_CHAN_AIO_ADAT11)
+	if (port & HDSPE_CHAN_AIO_ADAT)
 		return (12);
-	if (port & HDSPE_CHAN_AIO_ADAT12)
-		return (14);
-	if (port & HDSPE_CHAN_AIO_ADAT13)
-		return (16);
-	if (port & HDSPE_CHAN_AIO_ADAT14)
-		return (18);
 
 	/* RayDAT ports */
 	if (port & HDSPE_CHAN_RAY_AES)
 		return (0);
 	if (port & HDSPE_CHAN_RAY_SPDIF)
 		return (2);
-	if (port & HDSPE_CHAN_RAY_ADAT11)
+	if (port & HDSPE_CHAN_RAY_ADAT1)
 		return (4);
-	if (port & HDSPE_CHAN_RAY_ADAT12)
-		return (6);
-	if (port & HDSPE_CHAN_RAY_ADAT13)
-		return (8);
-	if (port & HDSPE_CHAN_RAY_ADAT14)
-		return (10);
-	if (port & HDSPE_CHAN_RAY_ADAT21)
-		return (12);
-	if (port & HDSPE_CHAN_RAY_ADAT22)
-		return (14);
-	if (port & HDSPE_CHAN_RAY_ADAT23)
-		return (16);
-	if (port & HDSPE_CHAN_RAY_ADAT24)
-		return (18);
-	if (port & HDSPE_CHAN_RAY_ADAT31)
-		return (20);
-	if (port & HDSPE_CHAN_RAY_ADAT32)
-		return (22);
-	if (port & HDSPE_CHAN_RAY_ADAT33)
-		return (24);
-	if (port & HDSPE_CHAN_RAY_ADAT34)
-		return (26);
-	if (port & HDSPE_CHAN_RAY_ADAT41)
-		return (28);
-	if (port & HDSPE_CHAN_RAY_ADAT42)
-		return (30);
-	if (port & HDSPE_CHAN_RAY_ADAT43)
-		return (32);
-	if (port & HDSPE_CHAN_RAY_ADAT44)
-		return (34);
+	if (port & HDSPE_CHAN_RAY_ADAT2)
+		return (4 + adat_width);
+	if (port & HDSPE_CHAN_RAY_ADAT3)
+		return (4 + 2 * adat_width);
+	if (port & HDSPE_CHAN_RAY_ADAT4)
+		return (4 + 3 * adat_width);
 
 	return (0);
 }
@@ -166,14 +136,8 @@ hdspe_channel_slot_width(unsigned int adat_width, uint32_t port)
 		slots += 2;
 	if (port & HDSPE_CHAN_AIO_SPDIF)
 		slots += 2;
-	if (port & HDSPE_CHAN_AIO_ADAT11)
-		slots += 2;
-	if (port & HDSPE_CHAN_AIO_ADAT12)
-		slots += 2;
-	if (port & HDSPE_CHAN_AIO_ADAT13)
-		slots += 2;
-	if (port & HDSPE_CHAN_AIO_ADAT14)
-		slots += 2;
+	if (port & HDSPE_CHAN_AIO_ADAT)
+		slots += adat_width;
 	if (slots > 0)
 		return slots;
 
@@ -182,38 +146,14 @@ hdspe_channel_slot_width(unsigned int adat_width, uint32_t port)
 		slots += 2;
 	if (port & HDSPE_CHAN_RAY_SPDIF)
 		slots += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT11)
-		slots += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT12)
-		slots += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT13)
-		slots += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT14)
-		slots += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT21)
-		slots += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT22)
-		slots += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT23)
-		slots += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT24)
-		slots += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT31)
-		slots += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT32)
-		slots += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT33)
-		slots += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT34)
-		slots += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT41)
-		slots += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT42)
-		slots += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT43)
-		slots += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT44)
-		slots += 2;
+	if (port & HDSPE_CHAN_RAY_ADAT1)
+		slots += adat_width;
+	if (port & HDSPE_CHAN_RAY_ADAT2)
+		slots += adat_width;
+	if (port & HDSPE_CHAN_RAY_ADAT3)
+		slots += adat_width;
+	if (port & HDSPE_CHAN_RAY_ADAT4)
+		slots += adat_width;
 
 	return slots;
 }
@@ -233,14 +173,8 @@ hdspe_channel_count(uint32_t adat_width, uint32_t port)
 		count += 2;
 	if (port & HDSPE_CHAN_AIO_SPDIF)
 		count += 2;
-	if (port & HDSPE_CHAN_AIO_ADAT11)
-		count += 2;
-	if (port & HDSPE_CHAN_AIO_ADAT12)
-		count += 2;
-	if (port & HDSPE_CHAN_AIO_ADAT13)
-		count += 2;
-	if (port & HDSPE_CHAN_AIO_ADAT14)
-		count += 2;
+	if (port & HDSPE_CHAN_AIO_ADAT)
+		count += adat_width;
 	if (count > 0)
 		return count;	/* Do not mix with RayDAT ports. */
 
@@ -249,38 +183,14 @@ hdspe_channel_count(uint32_t adat_width, uint32_t port)
 		count += 2;
 	if (port & HDSPE_CHAN_RAY_SPDIF)
 		count += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT11)
-		count += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT12)
-		count += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT13)
-		count += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT14)
-		count += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT21)
-		count += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT22)
-		count += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT23)
-		count += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT24)
-		count += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT31)
-		count += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT32)
-		count += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT33)
-		count += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT34)
-		count += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT41)
-		count += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT42)
-		count += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT43)
-		count += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT44)
-		count += 2;
+	if (port & HDSPE_CHAN_RAY_ADAT1)
+		count += adat_width;
+	if (port & HDSPE_CHAN_RAY_ADAT2)
+		count += adat_width;
+	if (port & HDSPE_CHAN_RAY_ADAT3)
+		count += adat_width;
+	if (port & HDSPE_CHAN_RAY_ADAT4)
+		count += adat_width;
 
 	return count;
 }
@@ -647,7 +557,8 @@ hdspechan_init(kobj_t obj, void *devinfo, struct snd_dbuf *b,
 	ch->caps = malloc(sizeof(struct pcmchan_caps), M_HDSPE, M_NOWAIT);
 	*(ch->caps) = (struct pcmchan_caps) {32000, 192000, ch->cap_fmts, 0};
 
-	ch->size = HDSPE_CHANBUF_SIZE * 2; /* max size */
+	/* Allocate maximum buffer size. */
+	ch->size = HDSPE_CHANBUF_SIZE * hdspe_channel_count(8, ch->ports);
 	ch->data = malloc(ch->size, M_HDSPE, M_NOWAIT);
 
 	ch->buffer = b;
@@ -727,8 +638,7 @@ hdspechan_getptr(kobj_t obj, void *data)
 	snd_mtxunlock(sc->lock);
 
 	pos = ret & HDSPE_BUF_POSITION_MASK;
-	if (AFMT_CHANNEL(ch->format) == 2)
-		pos *= 2; /* Hardbuf twice bigger. */
+	pos *= AFMT_CHANNEL(ch->format); /* Hardbuf with multiple channels. */
 
 	return (pos);
 }
@@ -996,7 +906,14 @@ hdspe_pcm_attach(device_t dev)
 	scp->ih = &hdspe_pcm_intr;
 
 	bzero(desc, sizeof(desc));
-	snprintf(desc, sizeof(desc), "HDSPe AIO [%s]", scp->hc->descr);
+	if (scp->hc->ports & HDSPE_CHAN_AIO_ALL)
+		snprintf(desc, sizeof(desc), "HDSPe AIO [%s]",
+		    scp->hc->descr);
+	else if (scp->hc->ports & HDSPE_CHAN_RAY_ALL)
+		snprintf(desc, sizeof(desc), "HDSPe RayDAT [%s]",
+		    scp->hc->descr);
+	else
+		snprintf(desc, sizeof(desc), "HDSPe ? [%s]", scp->hc->descr);
 	device_set_desc_copy(dev, desc);
 
 	/*
