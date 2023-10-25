@@ -637,6 +637,16 @@ hdspechan_init(kobj_t obj, void *devinfo, struct snd_dbuf *b,
 	ch->lvol = 0;
 	ch->rvol = 0;
 
+	ch->cap_fmts[0] =
+	    SND_FORMAT(AFMT_S32_LE, hdspe_channel_count(2, ch->ports), 0);
+	ch->cap_fmts[1] =
+	    SND_FORMAT(AFMT_S32_LE, hdspe_channel_count(4, ch->ports), 0);
+	ch->cap_fmts[2] =
+	    SND_FORMAT(AFMT_S32_LE, hdspe_channel_count(8, ch->ports), 0);
+	ch->cap_fmts[3] = 0;
+	ch->caps = malloc(sizeof(struct pcmchan_caps), M_HDSPE, M_NOWAIT);
+	*(ch->caps) = (struct pcmchan_caps) {32000, 192000, ch->cap_fmts, 0};
+
 	ch->size = HDSPE_CHANBUF_SIZE * 2; /* max size */
 	ch->data = malloc(ch->size, M_HDSPE, M_NOWAIT);
 
@@ -742,6 +752,10 @@ hdspechan_free(kobj_t obj, void *data)
 	if (ch->data != NULL) {
 		free(ch->data, M_HDSPE);
 		ch->data = NULL;
+	}
+	if (ch->caps != NULL) {
+		free(ch->caps, M_HDSPE);
+		ch->caps = NULL;
 	}
 	snd_mtxunlock(sc->lock);
 
@@ -902,20 +916,12 @@ end:
 	return (sndbuf_getblksz(ch->buffer));
 }
 
-static uint32_t hdspe_rfmt[] = {
+static uint32_t hdspe_bkp_fmt[] = {
 	SND_FORMAT(AFMT_S32_LE, 2, 0),
 	0
 };
 
-static struct pcmchan_caps hdspe_rcaps = {32000, 192000, hdspe_rfmt, 0};
-
-static uint32_t hdspe_pfmt[] = {
-	SND_FORMAT(AFMT_S32_LE, 1, 0),
-	SND_FORMAT(AFMT_S32_LE, 2, 0),
-	0
-};
-
-static struct pcmchan_caps hdspe_pcaps = {32000, 192000, hdspe_pfmt, 0};
+static struct pcmchan_caps hdspe_bkp_caps = {32000, 192000, hdspe_bkp_fmt, 0};
 
 static struct pcmchan_caps *
 hdspechan_getcaps(kobj_t obj, void *data)
@@ -929,8 +935,10 @@ hdspechan_getcaps(kobj_t obj, void *data)
 	device_printf(scp->dev, "hdspechan_getcaps()\n");
 #endif
 
-	return ((ch->dir == PCMDIR_PLAY) ?
-	    &hdspe_pcaps : &hdspe_rcaps);
+	if (ch->caps != NULL)
+		return (ch->caps);
+
+	return (&hdspe_bkp_caps);
 }
 
 static kobj_method_t hdspechan_methods[] = {
