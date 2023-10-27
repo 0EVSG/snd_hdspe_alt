@@ -91,108 +91,116 @@ hdspe_adat_width(uint32_t speed)
 }
 
 static unsigned int
-hdspe_channel_slot_base(unsigned int adat_width, uint32_t port)
-{
-	/* AIO ports */
-	if (port & HDSPE_CHAN_AIO_LINE)
-		return (0);
-	if (port & HDSPE_CHAN_AIO_PHONE)
-		return (6);
-	if (port & HDSPE_CHAN_AIO_AES)
-		return (8);
-	if (port & HDSPE_CHAN_AIO_SPDIF)
-		return (10);
-	if (port & HDSPE_CHAN_AIO_ADAT)
-		return (12);
-
-	/* RayDAT ports */
-	if (port & HDSPE_CHAN_RAY_AES)
-		return (0);
-	if (port & HDSPE_CHAN_RAY_SPDIF)
-		return (2);
-	if (port & HDSPE_CHAN_RAY_ADAT1)
-		return (4);
-	if (port & HDSPE_CHAN_RAY_ADAT2)
-		return (4 + adat_width);
-	if (port & HDSPE_CHAN_RAY_ADAT3)
-		return (4 + 2 * adat_width);
-	if (port & HDSPE_CHAN_RAY_ADAT4)
-		return (4 + 3 * adat_width);
-
-	return (0);
-}
-
-static unsigned int
-hdspe_channel_slot_width(unsigned int adat_width, uint32_t port)
-{
-	unsigned int slots = 0;
-
-	/* AIO ports */
-	if (port & HDSPE_CHAN_AIO_LINE)
-		return (2);		/* Non-adjacent to next DMA slot. */
-	if (port & HDSPE_CHAN_AIO_PHONE)
-		slots += 2;
-	if (port & HDSPE_CHAN_AIO_AES)
-		slots += 2;
-	if (port & HDSPE_CHAN_AIO_SPDIF)
-		slots += 2;
-	if (port & HDSPE_CHAN_AIO_ADAT)
-		slots += adat_width;
-	if (slots > 0)
-		return slots;
-
-	/* RayDAT ports */
-	if (port & HDSPE_CHAN_RAY_AES)
-		slots += 2;
-	if (port & HDSPE_CHAN_RAY_SPDIF)
-		slots += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT1)
-		slots += adat_width;
-	if (port & HDSPE_CHAN_RAY_ADAT2)
-		slots += adat_width;
-	if (port & HDSPE_CHAN_RAY_ADAT3)
-		slots += adat_width;
-	if (port & HDSPE_CHAN_RAY_ADAT4)
-		slots += adat_width;
-
-	return slots;
-}
-
-
-static unsigned int
-hdspe_channel_count(uint32_t adat_width, uint32_t port)
+hdspe_channel_count(uint32_t ports, uint32_t adat_width)
 {
 	unsigned int count = 0;
 
-	/* AIO ports. */
-	if (port & HDSPE_CHAN_AIO_LINE)
-		count += 2;
-	if (port & HDSPE_CHAN_AIO_PHONE)
-		count += 2;	/* Phones have no recording channel. */
-	if (port & HDSPE_CHAN_AIO_AES)
-		count += 2;
-	if (port & HDSPE_CHAN_AIO_SPDIF)
-		count += 2;
-	if (port & HDSPE_CHAN_AIO_ADAT)
-		count += adat_width;
-	if (count > 0)
-		return count;	/* Do not mix with RayDAT ports. */
-
-	/* RayDAT ports. */
-	if (port & HDSPE_CHAN_RAY_AES)
-		count += 2;
-	if (port & HDSPE_CHAN_RAY_SPDIF)
-		count += 2;
-	if (port & HDSPE_CHAN_RAY_ADAT1)
-		count += adat_width;
-	if (port & HDSPE_CHAN_RAY_ADAT2)
-		count += adat_width;
-	if (port & HDSPE_CHAN_RAY_ADAT3)
-		count += adat_width;
-	if (port & HDSPE_CHAN_RAY_ADAT4)
-		count += adat_width;
+	if (ports & HDSPE_CHAN_AIO_ALL) {
+		/* AIO ports. */
+		if (ports & HDSPE_CHAN_AIO_LINE)
+			count += 2;
+		if (ports & HDSPE_CHAN_AIO_PHONE)
+			count += 2;
+		if (ports & HDSPE_CHAN_AIO_AES)
+			count += 2;
+		if (ports & HDSPE_CHAN_AIO_SPDIF)
+			count += 2;
+		if (ports & HDSPE_CHAN_AIO_ADAT)
+			count += adat_width;
+	} else if (ports & HDSPE_CHAN_RAY_ALL) {
+		/* RayDAT ports. */
+		if (ports & HDSPE_CHAN_RAY_AES)
+			count += 2;
+		if (ports & HDSPE_CHAN_RAY_SPDIF)
+			count += 2;
+		if (ports & HDSPE_CHAN_RAY_ADAT1)
+			count += adat_width;
+		if (ports & HDSPE_CHAN_RAY_ADAT2)
+			count += adat_width;
+		if (ports & HDSPE_CHAN_RAY_ADAT3)
+			count += adat_width;
+		if (ports & HDSPE_CHAN_RAY_ADAT4)
+			count += adat_width;
+	}
 
 	return count;
+}
+
+static unsigned int
+hdspe_channel_offset(uint32_t subset, uint32_t ports, unsigned int adat_width)
+{
+	uint32_t preceding;
+
+	/* Make sure we have a subset of ports. */
+	subset &= ports;
+	/* Include all ports preceding the first one of the subset. */
+	preceding = ports & (~subset & (subset - 1));
+
+	if (preceding & HDSPE_CHAN_AIO_ALL) {
+		preceding &= HDSPE_CHAN_AIO_ALL;	/* Contiguous AIO slots. */
+	} else if (preceding & HDSPE_CHAN_RAY_ALL) {
+		preceding &= HDSPE_CHAN_RAY_ALL;	/* Contiguous RayDAT slots. */
+	}
+
+	return hdspe_channel_count(preceding, adat_width);
+}
+
+static unsigned int
+hdspe_port_slot_offset(uint32_t port, unsigned int adat_width)
+{
+	/* Exctract the first port (lowest bit) if set of ports. */
+	port = port & (~(port - 1));
+
+	switch (port) {
+	/* AIO ports */
+	case HDSPE_CHAN_AIO_LINE:
+		return (0);
+	case HDSPE_CHAN_AIO_PHONE:
+		return (6);
+	case HDSPE_CHAN_AIO_AES:
+		return (8);
+	case HDSPE_CHAN_AIO_SPDIF:
+		return (10);
+	case HDSPE_CHAN_AIO_ADAT:
+		return (12);
+
+	/* RayDAT ports */
+	case HDSPE_CHAN_RAY_AES:
+		return (0);
+	case HDSPE_CHAN_RAY_SPDIF:
+		return (2);
+	case HDSPE_CHAN_RAY_ADAT1:
+		return (4);
+	case HDSPE_CHAN_RAY_ADAT2:
+		return (4 + adat_width);
+	case HDSPE_CHAN_RAY_ADAT3:
+		return (4 + 2 * adat_width);
+	case HDSPE_CHAN_RAY_ADAT4:
+		return (4 + 3 * adat_width);
+	default:
+		return (0);
+	}
+}
+
+static unsigned int
+hdspe_port_slot_width(uint32_t ports, unsigned int adat_width)
+{
+	uint32_t ends, row;
+
+	/* Ends of port rows are followed by a port which is not in the set. */
+	ends = ports & (~(ports >> 1));
+	/* First row of contiguous ports ends in the first row end. */
+	row = ports & (ends ^ (ends - 1));
+
+	if (row & HDSPE_CHAN_AIO_LINE) {
+		row = HDSPE_CHAN_AIO_LINE;	/* Slot gap after this port. */
+	} else if (row & HDSPE_CHAN_AIO_ALL) {
+		row &= HDSPE_CHAN_AIO_ALL;	/* Contiguous AIO slots. */
+	} else if (row & HDSPE_CHAN_RAY_ALL) {
+		row &= HDSPE_CHAN_RAY_ALL;	/* Contiguous RayDAT slots. */
+	}
+
+	return hdspe_channel_count(row, adat_width);
 }
 
 static int
@@ -225,9 +233,9 @@ hdspechan_setgain(struct sc_chinfo *ch)
 
 	sc = ch->parent->sc;
 
-	slot = hdspe_channel_slot_base(hdspe_adat_width(sc->speed), ch->ports);
+	slot = hdspe_port_slot_offset(ch->ports, hdspe_adat_width(sc->speed));
 	end_slot = slot +
-	    hdspe_channel_slot_width(hdspe_adat_width(sc->speed), ch->ports);
+	    hdspe_port_slot_width(ch->ports, hdspe_adat_width(sc->speed));
 
 	/* Treat first slot as left channel. */
 	if (slot < end_slot) {
@@ -324,9 +332,9 @@ hdspechan_enable(struct sc_chinfo *ch, int value)
 
 	ch->run = value;
 
-	slot = hdspe_channel_slot_base(hdspe_adat_width(sc->speed), ch->ports);
+	slot = hdspe_port_slot_offset(ch->ports, hdspe_adat_width(sc->speed));
 	end_slot = slot +
-	    hdspe_channel_slot_width(hdspe_adat_width(sc->speed), ch->ports);
+	    hdspe_port_slot_width(ch->ports, hdspe_adat_width(sc->speed));
 
 	for (; slot < end_slot; slot++) {
 		hdspe_write_1(sc, reg + (4 * slot), value);
@@ -404,21 +412,26 @@ buffer_mux_write(uint32_t *dma, uint32_t *pcm, unsigned int pos,
 }
 
 static void
-buffer_mux_port(uint32_t *dma, uint32_t *pcm, uint32_t port, uint32_t ports,
-    unsigned int pos, unsigned int samples, unsigned int adat_width)
+buffer_mux_port(uint32_t *dma, uint32_t *pcm, uint32_t subset, uint32_t ports,
+    unsigned int pos, unsigned int samples, unsigned int adat_width,
+    unsigned int pcm_width)
 {
-	unsigned int slot, slot_width;
-	unsigned int channels, chan_pos = 0;
+	unsigned int slot_offset, slots;
+	unsigned int channels, chan_pos;
 
-	slot = hdspe_channel_slot_base(adat_width, port);
-	slot_width = hdspe_channel_slot_width(adat_width, port);
-	channels = hdspe_channel_count(adat_width, ports);
+	/* Translate DMA slot offset to DMA buffer offset. */
+	slot_offset = hdspe_port_slot_offset(subset, adat_width);
+	dma += slot_offset * HDSPE_CHANBUF_SAMPLES;
 
-	dma += slot * HDSPE_CHANBUF_SAMPLES;
-
+	/* Channel position of the port subset and total number of channels. */
+	chan_pos = hdspe_channel_offset(subset, ports, pcm_width);
 	pcm += chan_pos;
+	channels = hdspe_channel_count(ports, pcm_width);
 
-	buffer_mux_write(dma, pcm, pos, samples, slot_width, channels);
+	/* Only copy as much as supported by both hardware and pcm channel. */
+	slots = hdspe_port_slot_width(subset, MIN(adat_width, pcm_width));
+
+	buffer_mux_write(dma, pcm, pos, samples, slots, channels);
 }
 
 static void
@@ -437,61 +450,68 @@ buffer_demux_read(uint32_t *dma, uint32_t *pcm, unsigned int pos,
 }
 
 static void
-buffer_demux_port(uint32_t *dma, uint32_t *pcm, uint32_t port, uint32_t ports,
-    unsigned int pos, unsigned int samples, unsigned int adat_width)
+buffer_demux_port(uint32_t *dma, uint32_t *pcm, uint32_t subset, uint32_t ports,
+    unsigned int pos, unsigned int samples, unsigned int adat_width,
+    unsigned int pcm_width)
 {
-	unsigned int slot, slot_width;
-	unsigned int channels, chan_pos = 0;
+	unsigned int slot_offset, slots;
+	unsigned int channels, chan_pos;
 
-	slot = hdspe_channel_slot_base(adat_width, port);
-	slot_width = hdspe_channel_slot_width(adat_width, port);
-	channels = hdspe_channel_count(adat_width, ports);
+	/* Translate port slot offset to DMA buffer offset. */
+	slot_offset = hdspe_port_slot_offset(subset, adat_width);
+	dma += slot_offset * HDSPE_CHANBUF_SAMPLES;
 
-	dma += slot * HDSPE_CHANBUF_SAMPLES;
-
+	/* Channel position of the port subset and total number of channels. */
+	chan_pos = hdspe_channel_offset(subset, ports, pcm_width);
 	pcm += chan_pos;
+	channels = hdspe_channel_count(ports, pcm_width);
 
-	buffer_demux_read(dma, pcm, pos, samples, slot_width, channels);
+	/* Only copy as much as supported by both hardware and pcm channel. */
+	slots = hdspe_port_slot_width(subset, MIN(adat_width, pcm_width));
+
+	buffer_demux_read(dma, pcm, pos, samples, slots, channels);
 }
 
 
-/* Multiplex / demultiplex: 2.0 <-> 2 x 1.0. */
+/* Copy data between DMA and PCM buffers. */
 static void
 buffer_copy(struct sc_chinfo *ch)
 {
 	struct sc_pcminfo *scp;
 	struct sc_info *sc;
-	unsigned int src, dst;
+	unsigned int pos;
 	unsigned int n;
-	unsigned int adat_width;
+	unsigned int adat_width, pcm_width;
 
 	scp = ch->parent;
 	sc = scp->sc;
 
 	n = AFMT_CHANNEL(ch->format); /* n channels */
 
-	/* We only have to copy the minimum ADAT width from speed and format. */
+	/* Let pcm formats differ from current hardware ADAT width. */
 	adat_width = hdspe_adat_width(sc->speed);
-	if (adat_width > 2 && n == hdspe_channel_count(2, ch->ports))
-		adat_width = 2;
-	else if (adat_width > 4 && n == hdspe_channel_count(4, ch->ports))
-		adat_width = 4;
+	if (n == hdspe_channel_count(ch->ports, 2))
+		pcm_width = 2;
+	else if (n == hdspe_channel_count(ch->ports, 4))
+		pcm_width = 4;
+	else
+		pcm_width = 8;
 
 	if (ch->dir == PCMDIR_PLAY) {
-		src = sndbuf_getreadyptr(ch->buffer);
+		pos = sndbuf_getreadyptr(ch->buffer);
 	} else {
-		src = sndbuf_getfreeptr(ch->buffer);
+		pos = sndbuf_getfreeptr(ch->buffer);
 	}
 
-	src /= 4; /* Bytes per sample. */
-	dst = src / n; /* Destination buffer n-times smaller. */
+	pos /= 4; /* Bytes per sample. */
+	pos /= n; /* Destination buffer n-times smaller. */
 
 	if (ch->dir == PCMDIR_PLAY) {
-		buffer_mux_port(sc->pbuf, ch->data, ch->ports, ch->ports, dst,
-		    sc->period * 2, adat_width);
+		buffer_mux_port(sc->pbuf, ch->data, ch->ports, ch->ports, pos,
+		    sc->period * 2, adat_width, pcm_width);
 	} else {
-		buffer_demux_port(sc->rbuf, ch->data, ch->ports, ch->ports, dst,
-		    sc->period * 2, adat_width);
+		buffer_demux_port(sc->rbuf, ch->data, ch->ports, ch->ports, pos,
+		    sc->period * 2, adat_width, pcm_width);
 	}
 }
 
@@ -511,9 +531,9 @@ clean(struct sc_chinfo *ch)
 		buf = sc->pbuf;
 	}
 
-	slot = hdspe_channel_slot_base(hdspe_adat_width(sc->speed), ch->ports);
+	slot = hdspe_port_slot_offset(ch->ports, hdspe_adat_width(sc->speed));
 	end_slot = slot +
-	    hdspe_channel_slot_width(hdspe_adat_width(sc->speed), ch->ports);
+	    hdspe_port_slot_width(ch->ports, hdspe_adat_width(sc->speed));
 
 	for (; slot < end_slot; slot++) {
 		bzero(buf + HDSPE_CHANBUF_SAMPLES * slot, HDSPE_CHANBUF_SIZE);
@@ -540,25 +560,25 @@ hdspechan_init(kobj_t obj, void *devinfo, struct snd_dbuf *b,
 
 	ch = &scp->chan[num];
 	/* device_printf(scp->dev, "Slot base %d width %d vs left slot %d.",
-	    hdspe_channel_slot_base(8, scp->hc->ports),
-	    hdspe_channel_slot_width(8, scp->hc->ports), scp->hc->left); */
+	    hdspe_port_slot_offset(scp->hc->ports, 8),
+	    hdspe_port_slot_width(scp->hc->ports, 8), scp->hc->left); */
 	ch->ports = scp->hc->ports;
 	ch->run = 0;
 	ch->lvol = 0;
 	ch->rvol = 0;
 
 	ch->cap_fmts[0] =
-	    SND_FORMAT(AFMT_S32_LE, hdspe_channel_count(2, ch->ports), 0);
+	    SND_FORMAT(AFMT_S32_LE, hdspe_channel_count(ch->ports, 2), 0);
 	ch->cap_fmts[1] =
-	    SND_FORMAT(AFMT_S32_LE, hdspe_channel_count(4, ch->ports), 0);
+	    SND_FORMAT(AFMT_S32_LE, hdspe_channel_count(ch->ports, 4), 0);
 	ch->cap_fmts[2] =
-	    SND_FORMAT(AFMT_S32_LE, hdspe_channel_count(8, ch->ports), 0);
+	    SND_FORMAT(AFMT_S32_LE, hdspe_channel_count(ch->ports, 8), 0);
 	ch->cap_fmts[3] = 0;
 	ch->caps = malloc(sizeof(struct pcmchan_caps), M_HDSPE, M_NOWAIT);
 	*(ch->caps) = (struct pcmchan_caps) {32000, 192000, ch->cap_fmts, 0};
 
 	/* Allocate maximum buffer size. */
-	ch->size = HDSPE_CHANBUF_SIZE * hdspe_channel_count(8, ch->ports);
+	ch->size = HDSPE_CHANBUF_SIZE * hdspe_channel_count(ch->ports, 8);
 	ch->data = malloc(ch->size, M_HDSPE, M_NOWAIT);
 
 	ch->buffer = b;
@@ -927,6 +947,13 @@ hdspe_pcm_attach(device_t dev)
 		device_printf(dev, "Can't register pcm.\n");
 		return (ENXIO);
 	}
+
+	device_printf(dev, "%s: Slot %d width %d -> channel %d width %d.\n",
+	    desc,
+	    hdspe_port_slot_offset(scp->hc->ports, 8),
+	    hdspe_port_slot_width(scp->hc->ports, 8),
+	    hdspe_channel_offset(scp->hc->ports, HDSPE_CHAN_RAY_ALL, 8),
+	    hdspe_channel_count(scp->hc->ports, 8));
 
 	scp->chnum = 0;
 	for (i = 0; i < scp->hc->play; i++) {
