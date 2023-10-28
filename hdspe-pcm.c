@@ -322,9 +322,8 @@ hdspemixer_set(struct snd_mixer *m, unsigned dev,
 
 	scp = mix_getdevinfo(m);
 
-#if 0
-	device_printf(scp->dev, "hdspemixer_set() %d %d\n",
-	    left, right);
+#if 1
+	device_printf(scp->dev, "hdspemixer_set() %d %d\n", left, right);
 #endif
 
 	for (i = 0; i < scp->chnum; i++) {
@@ -412,7 +411,7 @@ hdspe_running(struct sc_info *sc)
 	return (0);
 bad:
 
-#if 0
+#if 1
 	device_printf(sc->dev, "hdspe is running\n");
 #endif
 
@@ -685,7 +684,7 @@ hdspechan_trigger(kobj_t obj, void *data, int go)
 	snd_mtxlock(sc->lock);
 	switch (go) {
 	case PCMTRIG_START:
-#if 0
+#if 1
 		device_printf(scp->dev, "hdspechan_trigger(): start\n");
 #endif
 		hdspechan_enable(ch, 1);
@@ -695,7 +694,7 @@ hdspechan_trigger(kobj_t obj, void *data, int go)
 
 	case PCMTRIG_STOP:
 	case PCMTRIG_ABORT:
-#if 0
+#if 1
 		device_printf(scp->dev, "hdspechan_trigger(): stop or abort\n");
 #endif
 		clean(ch);
@@ -748,7 +747,7 @@ hdspechan_free(kobj_t obj, void *data)
 	scp = ch->parent;
 	sc = scp->sc;
 
-#if 0
+#if 1
 	device_printf(scp->dev, "hdspechan_free()\n");
 #endif
 
@@ -773,7 +772,7 @@ hdspechan_setformat(kobj_t obj, void *data, uint32_t format)
 
 	ch = data;
 
-#if 0
+#if 1
 	struct sc_pcminfo *scp = ch->parent;
 	device_printf(scp->dev, "hdspechan_setformat(%d)\n", format);
 #endif
@@ -799,7 +798,7 @@ hdspechan_setspeed(kobj_t obj, void *data, uint32_t speed)
 	sc = scp->sc;
 	hr = NULL;
 
-#if 0
+#if 1
 	device_printf(scp->dev, "hdspechan_setspeed(%d)\n", speed);
 #endif
 
@@ -869,7 +868,7 @@ hdspechan_setblocksize(kobj_t obj, void *data, uint32_t blocksize)
 	sc = scp->sc;
 	hl = NULL;
 
-#if 0
+#if 1
 	device_printf(scp->dev, "hdspechan_setblocksize(%d)\n", blocksize);
 #endif
 
@@ -908,7 +907,7 @@ hdspechan_setblocksize(kobj_t obj, void *data, uint32_t blocksize)
 	sc->period = hl->period;
 	snd_mtxunlock(sc->lock);
 
-#if 0
+#if 1
 	device_printf(scp->dev, "New period=%d\n", sc->period);
 #endif
 
@@ -934,14 +933,15 @@ hdspechan_getcaps(kobj_t obj, void *data)
 
 	ch = data;
 
-#if 0
-	struct sc_pcminfo *scl = ch->parent;
+#if 1
+	struct sc_pcminfo *scp = ch->parent;
 	device_printf(scp->dev, "hdspechan_getcaps()\n");
 #endif
 
 	if (ch->caps != NULL)
 		return (ch->caps);
 
+	device_printf(scp->dev, "hdspechan_getcaps() fallback!\n");
 	return (&hdspe_bkp_caps);
 }
 
@@ -962,7 +962,7 @@ static int
 hdspe_pcm_probe(device_t dev)
 {
 
-#if 0
+#if 1
 	device_printf(dev,"hdspe_pcm_probe()\n");
 #endif
 
