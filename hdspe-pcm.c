@@ -90,6 +90,31 @@ hdspe_adat_width(uint32_t speed)
 	return 8;
 }
 
+static uint32_t
+hdspe_port_first(uint32_t ports)
+{
+	return (ports & (~(ports - 1)));	/* Extract first bit set. */
+}
+
+static uint32_t
+hdspe_port_first_row(uint32_t ports)
+{
+	uint32_t ends;
+
+	/* Restrict ports to one set with contiguous slots. */
+	if (ports & HDSPE_CHAN_AIO_LINE)
+		ports = HDSPE_CHAN_AIO_LINE;	/* Gap in the AIO slots here. */
+	else if (ports & HDSPE_CHAN_AIO_ALL)
+		ports &= HDSPE_CHAN_AIO_ALL;	/* Rest of the AIO slots. */
+	else if (ports & HDSPE_CHAN_RAY_ALL)
+		ports &= HDSPE_CHAN_RAY_ALL;	/* All RayDAT slots. */
+
+	/* Ends of port rows are followed by a port which is not in the set. */
+	ends = ports & (~(ports >> 1));
+	/* First row of contiguous ports ends in the first row end. */
+	return (ports & (ends ^ (ends - 1)));
+}
+
 static unsigned int
 hdspe_channel_count(uint32_t ports, uint32_t adat_width)
 {
@@ -149,9 +174,7 @@ static unsigned int
 hdspe_port_slot_offset(uint32_t port, unsigned int adat_width)
 {
 	/* Exctract the first port (lowest bit) if set of ports. */
-	port = port & (~(port - 1));
-
-	switch (port) {
+	switch (hdspe_port_first(port)) {
 	/* AIO ports */
 	case HDSPE_CHAN_AIO_LINE:
 		return (0);
@@ -185,21 +208,10 @@ hdspe_port_slot_offset(uint32_t port, unsigned int adat_width)
 static unsigned int
 hdspe_port_slot_width(uint32_t ports, unsigned int adat_width)
 {
-	uint32_t ends, row;
+	uint32_t row;
 
-	/* Ends of port rows are followed by a port which is not in the set. */
-	ends = ports & (~(ports >> 1));
-	/* First row of contiguous ports ends in the first row end. */
-	row = ports & (ends ^ (ends - 1));
-
-	if (row & HDSPE_CHAN_AIO_LINE) {
-		row = HDSPE_CHAN_AIO_LINE;	/* Slot gap after this port. */
-	} else if (row & HDSPE_CHAN_AIO_ALL) {
-		row &= HDSPE_CHAN_AIO_ALL;	/* Contiguous AIO slots. */
-	} else if (row & HDSPE_CHAN_RAY_ALL) {
-		row &= HDSPE_CHAN_RAY_ALL;	/* Contiguous RayDAT slots. */
-	}
-
+	/* Count number of contiguous slots from the first physical port. */
+	row = hdspe_port_first_row(ports);
 	return hdspe_channel_count(row, adat_width);
 }
 
@@ -229,22 +241,32 @@ static int
 hdspechan_setgain(struct sc_chinfo *ch)
 {
 	struct sc_info *sc;
+	uint32_t port, ports;
 	unsigned int slot, end_slot;
+	unsigned short volume;
 
 	sc = ch->parent->sc;
 
-	slot = hdspe_port_slot_offset(ch->ports, hdspe_adat_width(sc->speed));
-	end_slot = slot +
-	    hdspe_port_slot_width(ch->ports, hdspe_adat_width(sc->speed));
+	/* Iterate through all physical ports of the channel. */
+	ports = ch->ports;
+	port = hdspe_port_first(ports);
+	while (port != 0) {
+		/* Get slot range of the physical port. */
+		slot =
+		    hdspe_port_slot_offset(port, hdspe_adat_width(sc->speed));
+		end_slot = slot +
+		    hdspe_port_slot_width(port, hdspe_adat_width(sc->speed));
 
-	/* Treat first slot as left channel. */
-	if (slot < end_slot) {
-		hdspe_hw_mixer(ch, slot, slot, ch->lvol * HDSPE_MAX_GAIN / 100);
-		slot++;
-	}
-	/* Right channel, subsequent slots all get the same volume. */
-	for (; slot < end_slot; slot++) {
-		hdspe_hw_mixer(ch, slot, slot, ch->rvol * HDSPE_MAX_GAIN / 100);
+		/* Treat first slot as left channel. */
+		volume = ch->lvol * HDSPE_MAX_GAIN / 100;
+		for (; slot < end_slot; slot++) {
+			hdspe_hw_mixer(ch, slot, slot, volume);
+			/* Subsequent slots all get the right channel volume. */
+			volume = ch->rvol * HDSPE_MAX_GAIN / 100;
+		}
+
+		ports &= ~port;
+		port = hdspe_port_first(ports);
 	}
 
 	return (0);
@@ -319,6 +341,7 @@ hdspechan_enable(struct sc_chinfo *ch, int value)
 {
 	struct sc_pcminfo *scp;
 	struct sc_info *sc;
+	uint32_t row, ports;
 	int reg;
 	unsigned int slot, end_slot;
 
@@ -332,12 +355,21 @@ hdspechan_enable(struct sc_chinfo *ch, int value)
 
 	ch->run = value;
 
-	slot = hdspe_port_slot_offset(ch->ports, hdspe_adat_width(sc->speed));
-	end_slot = slot +
-	    hdspe_port_slot_width(ch->ports, hdspe_adat_width(sc->speed));
+	/* Iterate through rows of ports with contiguous slots. */
+	ports = ch->ports;
+	row = hdspe_port_first_row(ports);
+	while (row != 0) {
+		slot =
+		    hdspe_port_slot_offset(row, hdspe_adat_width(sc->speed));
+		end_slot = slot +
+		    hdspe_port_slot_width(row, hdspe_adat_width(sc->speed));
 
-	for (; slot < end_slot; slot++) {
-		hdspe_write_1(sc, reg + (4 * slot), value);
+		for (; slot < end_slot; slot++) {
+			hdspe_write_1(sc, reg + (4 * slot), value);
+		}
+
+		ports &= ~row;
+		row = hdspe_port_first_row(ports);
 	}
 }
 
@@ -479,6 +511,7 @@ buffer_copy(struct sc_chinfo *ch)
 {
 	struct sc_pcminfo *scp;
 	struct sc_info *sc;
+	uint32_t row, ports;
 	unsigned int pos;
 	unsigned int n;
 	unsigned int adat_width, pcm_width;
@@ -506,12 +539,27 @@ buffer_copy(struct sc_chinfo *ch)
 	pos /= 4; /* Bytes per sample. */
 	pos /= n; /* Destination buffer n-times smaller. */
 
-	if (ch->dir == PCMDIR_PLAY) {
-		buffer_mux_port(sc->pbuf, ch->data, ch->ports, ch->ports, pos,
-		    sc->period * 2, adat_width, pcm_width);
-	} else {
-		buffer_demux_port(sc->rbuf, ch->data, ch->ports, ch->ports, pos,
-		    sc->period * 2, adat_width, pcm_width);
+	/* Iterate through rows of ports with contiguous slots. */
+	ports = ch->ports;
+	if (pcm_width == adat_width)
+		row = hdspe_port_first_row(ports);
+	else
+		row = hdspe_port_first(ports);
+
+	while (row != 0) {
+		if (ch->dir == PCMDIR_PLAY) {
+			buffer_mux_port(sc->pbuf, ch->data, row, ch->ports, pos,
+			    sc->period * 2, adat_width, pcm_width);
+		} else {
+			buffer_demux_port(sc->rbuf, ch->data, row, ch->ports,
+			    pos, sc->period * 2, adat_width, pcm_width);
+		}
+
+		ports &= ~row;
+		if (pcm_width == adat_width)
+			row = hdspe_port_first_row(ports);
+		else
+			row = hdspe_port_first(ports);
 	}
 }
 
@@ -521,7 +569,8 @@ clean(struct sc_chinfo *ch)
 	struct sc_pcminfo *scp;
 	struct sc_info *sc;
 	uint32_t *buf;
-	unsigned int slot, end_slot;
+	uint32_t row, ports;
+	unsigned int offset, slots;
 
 	scp = ch->parent;
 	sc = scp->sc;
@@ -531,12 +580,21 @@ clean(struct sc_chinfo *ch)
 		buf = sc->pbuf;
 	}
 
-	slot = hdspe_port_slot_offset(ch->ports, hdspe_adat_width(sc->speed));
-	end_slot = slot +
-	    hdspe_port_slot_width(ch->ports, hdspe_adat_width(sc->speed));
 
-	for (; slot < end_slot; slot++) {
-		bzero(buf + HDSPE_CHANBUF_SAMPLES * slot, HDSPE_CHANBUF_SIZE);
+	/* Iterate through rows of ports with contiguous slots. */
+	ports = ch->ports;
+	row = hdspe_port_first_row(ports);
+	while (row != 0) {
+		offset = hdspe_port_slot_offset(ch->ports,
+		    hdspe_adat_width(sc->speed));
+		slots = hdspe_port_slot_width(ch->ports,
+		    hdspe_adat_width(sc->speed));
+
+		bzero(buf + offset * HDSPE_CHANBUF_SAMPLES,
+		    slots * HDSPE_CHANBUF_SIZE);
+
+		ports &= ~row;
+		row = hdspe_port_first_row(ports);
 	}
 
 	return (0);
