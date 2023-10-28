@@ -475,7 +475,7 @@ hdspe_attach(device_t dev)
 	uint32_t rev;
 	int i, err;
 
-#if 0
+#if 1
 	device_printf(dev, "hdspe_attach()\n");
 #endif
 
