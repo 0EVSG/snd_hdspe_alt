@@ -124,11 +124,12 @@
 #define HDSPE_CHAN_AIO_AES		(1 << 2)
 #define HDSPE_CHAN_AIO_SPDIF		(1 << 3)
 #define HDSPE_CHAN_AIO_ADAT		(1 << 4)
-#define HDSPE_CHAN_AIO_ALL		(HDSPE_CHAN_AIO_LINE | \
-					HDSPE_CHAN_AIO_PHONE | \
+#define HDSPE_CHAN_AIO_ALL_REC		(HDSPE_CHAN_AIO_LINE | \
 					HDSPE_CHAN_AIO_AES | \
 					HDSPE_CHAN_AIO_SPDIF | \
 					HDSPE_CHAN_AIO_ADAT)
+#define HDSPE_CHAN_AIO_ALL		(HDSPE_CHAN_AIO_ALL_REC | \
+					HDSPE_CHAN_AIO_PHONE) \
 
 #define HDSPE_CHAN_RAY_AES		(1 << 5)
 #define HDSPE_CHAN_RAY_SPDIF		(1 << 6)
@@ -146,8 +147,6 @@
 struct hdspe_channel {
 	uint32_t	ports;
 	char		*descr;
-	uint32_t	play;
-	uint32_t	rec;
 };
 
 /* Clock sources */

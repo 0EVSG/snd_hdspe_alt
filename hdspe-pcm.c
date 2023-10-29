@@ -80,6 +80,18 @@ static struct hdspe_rate rate_map[] = {
 	{ 0, 0 },
 };
 
+static uint32_t
+hdspe_channel_play_ports(struct hdspe_channel *hc)
+{
+	return (hc->ports & (HDSPE_CHAN_AIO_ALL | HDSPE_CHAN_RAY_ALL));
+}
+
+static uint32_t
+hdspe_channel_rec_ports(struct hdspe_channel *hc)
+{
+	return (hc->ports & (HDSPE_CHAN_AIO_ALL_REC | HDSPE_CHAN_RAY_ALL));
+}
+
 static unsigned int
 hdspe_adat_width(uint32_t speed)
 {
@@ -286,10 +298,10 @@ hdspemixer_init(struct snd_mixer *m)
 
 	mask = SOUND_MASK_PCM;
 
-	if (scp->hc->play)
+	if (hdspe_channel_play_ports(scp->hc))
 		mask |= SOUND_MASK_VOLUME;
 
-	if (scp->hc->rec)
+	if (hdspe_channel_rec_ports(scp->hc))
 		mask |= SOUND_MASK_RECLEV;
 
 	snd_mtxlock(sc->lock);
@@ -585,10 +597,9 @@ clean(struct sc_chinfo *ch)
 	ports = ch->ports;
 	row = hdspe_port_first_row(ports);
 	while (row != 0) {
-		offset = hdspe_port_slot_offset(ch->ports,
+		offset = hdspe_port_slot_offset(row,
 		    hdspe_adat_width(sc->speed));
-		slots = hdspe_port_slot_width(ch->ports,
-		    hdspe_adat_width(sc->speed));
+		slots = hdspe_port_slot_width(row, hdspe_adat_width(sc->speed));
 
 		bzero(buf + offset * HDSPE_CHANBUF_SAMPLES,
 		    slots * HDSPE_CHANBUF_SIZE);
@@ -620,7 +631,12 @@ hdspechan_init(kobj_t obj, void *devinfo, struct snd_dbuf *b,
 	/* device_printf(scp->dev, "Slot base %d width %d vs left slot %d.",
 	    hdspe_port_slot_offset(scp->hc->ports, 8),
 	    hdspe_port_slot_width(scp->hc->ports, 8), scp->hc->left); */
-	ch->ports = scp->hc->ports;
+
+	if (dir == PCMDIR_PLAY)
+		ch->ports = hdspe_channel_play_ports(scp->hc);
+	else
+		ch->ports = hdspe_channel_rec_ports(scp->hc);
+
 	ch->run = 0;
 	ch->lvol = 0;
 	ch->rvol = 0;
@@ -978,7 +994,8 @@ hdspe_pcm_attach(device_t dev)
 	char status[SND_STATUSLEN];
 	struct sc_pcminfo *scp;
 	char desc[64];
-	int i, err;
+	int err;
+	int play, rec;
 
 	scp = device_get_ivars(dev);
 	scp->ih = &hdspe_pcm_intr;
@@ -1000,7 +1017,9 @@ hdspe_pcm_attach(device_t dev)
 	 */
 	pcm_setflags(dev, pcm_getflags(dev) | SD_F_MPSAFE);
 
-	err = pcm_register(dev, scp, scp->hc->play, scp->hc->rec);
+	play = (hdspe_channel_play_ports(scp->hc)) ? 1 : 0;
+	rec = (hdspe_channel_rec_ports(scp->hc)) ? 1 : 0;
+	err = pcm_register(dev, scp, play, rec);
 	if (err) {
 		device_printf(dev, "Can't register pcm.\n");
 		return (ENXIO);
@@ -1014,12 +1033,12 @@ hdspe_pcm_attach(device_t dev)
 	    hdspe_channel_count(scp->hc->ports, 8));
 
 	scp->chnum = 0;
-	for (i = 0; i < scp->hc->play; i++) {
+	if (play) {
 		pcm_addchan(dev, PCMDIR_PLAY, &hdspechan_class, scp);
 		scp->chnum++;
 	}
 
-	for (i = 0; i < scp->hc->rec; i++) {
+	if (rec) {
 		pcm_addchan(dev, PCMDIR_REC, &hdspechan_class, scp);
 		scp->chnum++;
 	}
