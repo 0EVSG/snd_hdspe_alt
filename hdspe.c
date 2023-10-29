@@ -71,22 +71,22 @@ static struct hdspe_clock_source hdspe_clock_source_table_aio[] = {
 };
 
 static struct hdspe_channel chan_map_aio[] = {
-	{ HDSPE_CHAN_AIO_LINE,     "line", 1, 1 },
-	{ HDSPE_CHAN_AIO_PHONE,   "phone", 1, 0 },
-	{ HDSPE_CHAN_AIO_AES,       "aes", 1, 1 },
-	{ HDSPE_CHAN_AIO_SPDIF,  "s/pdif", 1, 1 },
-	{ HDSPE_CHAN_AIO_ADAT,     "adat", 1, 1 },
-	{                    0,      NULL, 0, 0 },
+	{ HDSPE_CHAN_AIO_LINE,    "line" },
+	{ HDSPE_CHAN_AIO_PHONE,  "phone" },
+	{ HDSPE_CHAN_AIO_AES,      "aes" },
+	{ HDSPE_CHAN_AIO_SPDIF, "s/pdif" },
+	{ HDSPE_CHAN_AIO_ADAT,    "adat" },
+	{ 0,                        NULL },
 };
 
 static struct hdspe_channel chan_map_rd[] = {
-	{ HDSPE_CHAN_RAY_AES,      "aes", 1, 1 },
-	{ HDSPE_CHAN_RAY_SPDIF, "s/pdif", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT1,  "adat1", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT2,  "adat2", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT3,  "adat3", 1, 1 },
-	{ HDSPE_CHAN_RAY_ADAT4,  "adat4", 1, 1 },
-	{                    0,     NULL, 0, 0 },
+	{ HDSPE_CHAN_RAY_AES,      "aes" },
+	{ HDSPE_CHAN_RAY_SPDIF, "s/pdif" },
+	{ HDSPE_CHAN_RAY_ADAT1,  "adat1" },
+	{ HDSPE_CHAN_RAY_ADAT2,  "adat2" },
+	{ HDSPE_CHAN_RAY_ADAT3,  "adat3" },
+	{ HDSPE_CHAN_RAY_ADAT4,  "adat4" },
+	{ 0,                        NULL },
 };
 
 static void
