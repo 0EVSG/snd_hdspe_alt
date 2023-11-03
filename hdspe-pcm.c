@@ -805,6 +805,9 @@ hdspechan_setspeed(kobj_t obj, void *data, uint32_t speed)
 	if (hdspe_running(sc) == 1)
 		goto end;
 
+	if (sc->force_speed > 0)
+		speed = sc->force_speed;
+
 	/* First look for equal frequency. */
 	for (i = 0; rate_map[i].speed != 0; i++) {
 		if (rate_map[i].speed == speed)
@@ -934,13 +937,36 @@ static struct pcmchan_caps *
 hdspechan_getcaps(kobj_t obj, void *data)
 {
 	struct sc_chinfo *ch;
+	struct sc_info *sc;
+	unsigned int adat_width;
+	uint32_t format;
 
 	ch = data;
+	sc = ch->parent->sc;
 
 #if 1
 	struct sc_pcminfo *scp = ch->parent;
 	device_printf(scp->dev, "hdspechan_getcaps()\n");
 #endif
+
+	/*
+	 * Format selection with more than 8 channels is broken, always selects
+	 * the first format. Make sure it matches ADAT width of forced speed.
+	 */
+	if (sc->force_speed > 0) {
+		adat_width = hdspe_adat_width(sc->force_speed);
+		format = SND_FORMAT(AFMT_S32_LE,
+		    hdspe_channel_count(ch->ports, adat_width), 0);
+
+		/* Swap capability formats if forced speed is not first. */
+		if (ch->cap_fmts[1] == format) {
+			ch->cap_fmts[1] = ch->cap_fmts[0];
+			ch->cap_fmts[0] = format;
+		} else if (ch->cap_fmts[2] == format) {
+			ch->cap_fmts[2] = ch->cap_fmts[0];
+			ch->cap_fmts[0] = format;
+		}
+	}
 
 	if (ch->caps != NULL)
 		return (ch->caps);
