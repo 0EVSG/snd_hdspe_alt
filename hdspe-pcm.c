@@ -476,7 +476,15 @@ buffer_mux_port(uint32_t *dma, uint32_t *pcm, uint32_t subset, uint32_t ports,
 	/* Only copy as much as supported by both hardware and pcm channel. */
 	slots = hdspe_port_slot_width(subset, MIN(adat_width, pcm_width));
 
-	buffer_mux_write(dma, pcm, pos, samples, slots, channels);
+	/* Let the compiler inline and loop unroll common cases. */
+	if (slots == 2)
+		buffer_mux_write(dma, pcm, pos, samples, 2, channels);
+	else if (slots == 4)
+		buffer_mux_write(dma, pcm, pos, samples, 4, channels);
+	else if (slots == 8)
+		buffer_mux_write(dma, pcm, pos, samples, 8, channels);
+	else
+		buffer_mux_write(dma, pcm, pos, samples, slots, channels);
 }
 
 static void
@@ -514,7 +522,15 @@ buffer_demux_port(uint32_t *dma, uint32_t *pcm, uint32_t subset, uint32_t ports,
 	/* Only copy as much as supported by both hardware and pcm channel. */
 	slots = hdspe_port_slot_width(subset, MIN(adat_width, pcm_width));
 
-	buffer_demux_read(dma, pcm, pos, samples, slots, channels);
+	/* Let the compiler inline and loop unroll common cases. */
+	if (slots == 2)
+		buffer_demux_read(dma, pcm, pos, samples, 2, channels);
+	else if (slots == 4)
+		buffer_demux_read(dma, pcm, pos, samples, 4, channels);
+	else if (slots == 8)
+		buffer_demux_read(dma, pcm, pos, samples, 8, channels);
+	else
+		buffer_demux_read(dma, pcm, pos, samples, slots, channels);
 }
 
 
