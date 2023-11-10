@@ -307,7 +307,6 @@ hdspemixer_init(struct snd_mixer *m)
 		mask |= SOUND_MASK_RECLEV;
 
 	snd_mtxlock(sc->lock);
-	pcm_setflags(scp->dev, pcm_getflags(scp->dev) | SD_F_SOFTPCMVOL);
 	mix_setdevs(m, mask);
 	snd_mtxunlock(sc->lock);
 
