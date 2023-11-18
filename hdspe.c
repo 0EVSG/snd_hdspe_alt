@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2012-2016 Ruslan Bukin <br@bsdpad.com>
  * Copyright (c) 2023-2024 Florian Walpen <dev@submerge.ch>
@@ -43,8 +43,6 @@
 #include <dev/pci/pcivar.h>
 
 #include <mixer_if.h>
-
-SND_DECLARE_FILE("$FreeBSD$");
 
 static bool hdspe_unified_pcm = false;
 
