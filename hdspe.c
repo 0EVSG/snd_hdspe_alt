@@ -266,9 +266,9 @@ hdspe_sysctl_clock_preference(SYSCTL_HANDLER_ARGS)
 	sc = oidp->oid_arg1;
 
 	/* Select sync ports table for device type. */
-	if (sc->type == AIO)
+	if (sc->type == HDSPE_AIO)
 		clock_table = hdspe_clock_source_table_aio;
-	else if (sc->type == RAYDAT)
+	else if (sc->type == HDSPE_RAYDAT)
 		clock_table = hdspe_clock_source_table_rd;
 	else
 		return (ENXIO);
@@ -316,9 +316,9 @@ hdspe_sysctl_clock_source(SYSCTL_HANDLER_ARGS)
 	sc = oidp->oid_arg1;
 
 	/* Select sync ports table for device type. */
-	if (sc->type == AIO)
+	if (sc->type == HDSPE_AIO)
 		clock_table = hdspe_clock_source_table_aio;
-	else if (sc->type == RAYDAT)
+	else if (sc->type == HDSPE_RAYDAT)
 		clock_table = hdspe_clock_source_table_rd;
 	else
 		return (ENXIO);
@@ -355,9 +355,9 @@ hdspe_sysctl_clock_list(SYSCTL_HANDLER_ARGS)
 	sc = oidp->oid_arg1;
 
 	/* Select clock source table for device type. */
-	if (sc->type == AIO)
+	if (sc->type == HDSPE_AIO)
 		clock_table = hdspe_clock_source_table_aio;
-	else if (sc->type == RAYDAT)
+	else if (sc->type == HDSPE_RAYDAT)
 		clock_table = hdspe_clock_source_table_rd;
 	else
 		return (ENXIO);
@@ -385,9 +385,9 @@ hdspe_sysctl_sync_status(SYSCTL_HANDLER_ARGS)
 	sc = oidp->oid_arg1;
 
 	/* Select sync ports table for device type. */
-	if (sc->type == AIO)
+	if (sc->type == HDSPE_AIO)
 		clock_table = hdspe_clock_source_table_aio;
-	else if (sc->type == RAYDAT)
+	else if (sc->type == HDSPE_RAYDAT)
 		clock_table = hdspe_clock_source_table_rd;
 	else
 		return (ENXIO);
@@ -403,11 +403,10 @@ hdspe_sysctl_sync_status(SYSCTL_HANDLER_ARGS)
 			if (n > 0)
 				n += strlcpy(buf + n, ",", sizeof(buf) - n);
 			state = "none";
-			if ((clock->sync_bit & status) != 0) {
+			if ((clock->sync_bit & status) != 0)
 				state = "sync";
-			} else if ((clock->lock_bit & status) != 0) {
+			else if ((clock->lock_bit & status) != 0)
 				state = "lock";
-			}
 			n += snprintf(buf + n, sizeof(buf) - n, "%s(%s)",
 			    clock->name, state);
 		}
@@ -455,8 +454,8 @@ hdspe_init(struct sc_info *sc)
 	hdspe_write_4(sc, HDSPE_CONTROL_REG, sc->ctrl_register);
 
 	switch (sc->type) {
-	case RAYDAT:
-	case AIO:
+	case HDSPE_RAYDAT:
+	case HDSPE_AIO:
 		period = HDSPE_FREQ_AIO;
 		break;
 	default:
@@ -496,11 +495,11 @@ hdspe_attach(device_t dev)
 	rev = pci_get_revid(dev);
 	switch (rev) {
 	case PCI_REVISION_AIO:
-		sc->type = AIO;
+		sc->type = HDSPE_AIO;
 		chan_map = chan_map_aio;
 		break;
 	case PCI_REVISION_RAYDAT:
-		sc->type = RAYDAT;
+		sc->type = HDSPE_RAYDAT;
 		chan_map = chan_map_rd;
 		break;
 	default:

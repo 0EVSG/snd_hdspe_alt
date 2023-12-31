@@ -34,8 +34,8 @@
 #define	PCI_REVISION_AIO		212
 #define	PCI_REVISION_RAYDAT		211
 
-#define	AIO				0
-#define	RAYDAT				1
+#define	HDSPE_AIO			0
+#define	HDSPE_RAYDAT			1
 
 /* Hardware mixer */
 #define	HDSPE_OUT_ENABLE_BASE		512
