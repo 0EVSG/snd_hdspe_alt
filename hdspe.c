@@ -257,31 +257,30 @@ hdspe_map_dmabuf(struct sc_info *sc)
 static int
 hdspe_sysctl_clock_preference(SYSCTL_HANDLER_ARGS)
 {
-	struct sc_info *sc = oidp->oid_arg1;
+	struct sc_info *sc;
 	struct hdspe_clock_source *clock_table, *clock;
 	char buf[16] = "invalid";
 	int error;
 	uint32_t setting;
 
+	sc = oidp->oid_arg1;
+
 	/* Select sync ports table for device type. */
-	if (sc->type == AIO) {
+	if (sc->type == AIO)
 		clock_table = hdspe_clock_source_table_aio;
-	} else if (sc->type == RAYDAT) {
+	else if (sc->type == RAYDAT)
 		clock_table = hdspe_clock_source_table_rd;
-	} else {
+	else
 		return (ENXIO);
-	}
 
 	/* Extract preferred clock source from settings register. */
 	setting = sc->settings_register & HDSPE_SETTING_CLOCK_MASK;
 	for (clock = clock_table; clock->name != NULL; ++clock) {
-		if (clock->setting == setting) {
+		if (clock->setting == setting)
 			break;
-		}
 	}
-	if (clock->name != NULL) {
+	if (clock->name != NULL)
 		strlcpy(buf, clock->name, sizeof(buf));
-	}
 
 	/* Process sysctl string request. */
 	error = sysctl_handle_string(oidp, buf, sizeof(buf), req);
@@ -290,9 +289,8 @@ hdspe_sysctl_clock_preference(SYSCTL_HANDLER_ARGS)
 
 	/* Find clock source matching the sysctl string. */
 	for (clock = clock_table; clock->name != NULL; ++clock) {
-		if (strncasecmp(buf, clock->name, sizeof(buf)) == 0) {
+		if (strncasecmp(buf, clock->name, sizeof(buf)) == 0)
 			break;
-		}
 	}
 
 	/* Set preferred clock source in settings register. */
@@ -310,60 +308,59 @@ hdspe_sysctl_clock_preference(SYSCTL_HANDLER_ARGS)
 static int
 hdspe_sysctl_clock_source(SYSCTL_HANDLER_ARGS)
 {
-	struct sc_info *sc = oidp->oid_arg1;
+	struct sc_info *sc;
 	struct hdspe_clock_source *clock_table, *clock;
 	char buf[16] = "invalid";
 	uint32_t status;
 
+	sc = oidp->oid_arg1;
+
 	/* Select sync ports table for device type. */
-	if (sc->type == AIO) {
+	if (sc->type == AIO)
 		clock_table = hdspe_clock_source_table_aio;
-	} else if (sc->type == RAYDAT) {
+	else if (sc->type == RAYDAT)
 		clock_table = hdspe_clock_source_table_rd;
-	} else {
+	else
 		return (ENXIO);
-	}
 
 	/* Read current clock source from status register. */
 	snd_mtxlock(sc->lock);
 	if ((sc->settings_register & HDSPE_SETTING_MASTER) == 0) {
 		status = hdspe_read_4(sc, HDSPE_STATUS1_REG);
 		status &= HDSPE_STATUS1_CLOCK_MASK;
-	} else {
+	} else
 		status = hdspe_status1_clock(15);
-	}
 	snd_mtxunlock(sc->lock);
 
 	/* Translate clock source to clock source name. */
 	for (clock = clock_table; clock->name != NULL; ++clock) {
-		if (clock->status == status) {
+		if (clock->status == status)
 			break;
-		}
 	}
 
 	/* Process sysctl string request. */
-	if (clock->name != NULL) {
+	if (clock->name != NULL)
 		strlcpy(buf, clock->name, sizeof(buf));
-	}
-	return sysctl_handle_string(oidp, buf, sizeof(buf), req);
+	return (sysctl_handle_string(oidp, buf, sizeof(buf), req));
 }
 
 static int
 hdspe_sysctl_clock_list(SYSCTL_HANDLER_ARGS)
 {
-	struct sc_info *sc = oidp->oid_arg1;
+	struct sc_info *sc;
 	struct hdspe_clock_source *clock_table, *clock;
 	char buf[256];
 	int n = 0;
 
+	sc = oidp->oid_arg1;
+
 	/* Select clock source table for device type. */
-	if (sc->type == AIO) {
+	if (sc->type == AIO)
 		clock_table = hdspe_clock_source_table_aio;
-	} else if (sc->type == RAYDAT) {
+	else if (sc->type == RAYDAT)
 		clock_table = hdspe_clock_source_table_rd;
-	} else {
+	else
 		return (ENXIO);
-	}
 
 	/* List available clock sources. */
 	buf[0] = 0;
@@ -372,27 +369,28 @@ hdspe_sysctl_clock_list(SYSCTL_HANDLER_ARGS)
 			n += strlcpy(buf + n, ",", sizeof(buf) - n);
 		n += strlcpy(buf + n, clock->name, sizeof(buf) - n);
 	}
-	return sysctl_handle_string(oidp, buf, sizeof(buf), req);
+	return (sysctl_handle_string(oidp, buf, sizeof(buf), req));
 }
 
 static int
 hdspe_sysctl_sync_status(SYSCTL_HANDLER_ARGS)
 {
-	struct sc_info *sc = oidp->oid_arg1;
+	struct sc_info *sc;
 	struct hdspe_clock_source *clock_table, *clock;
 	char buf[256];
 	char *state;
 	int n = 0;
 	uint32_t status;
 
+	sc = oidp->oid_arg1;
+
 	/* Select sync ports table for device type. */
-	if (sc->type == AIO) {
+	if (sc->type == AIO)
 		clock_table = hdspe_clock_source_table_aio;
-	} else if (sc->type == RAYDAT) {
+	else if (sc->type == RAYDAT)
 		clock_table = hdspe_clock_source_table_rd;
-	} else {
+	else
 		return (ENXIO);
-	}
 
 	/* Read current lock and sync bits from status register. */
 	snd_mtxlock(sc->lock);
@@ -414,7 +412,7 @@ hdspe_sysctl_sync_status(SYSCTL_HANDLER_ARGS)
 			    clock->name, state);
 		}
 	}
-	return sysctl_handle_string(oidp, buf, sizeof(buf), req);
+	return (sysctl_handle_string(oidp, buf, sizeof(buf), req));
 }
 
 static int
