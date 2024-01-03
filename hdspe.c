@@ -252,9 +252,6 @@ hdspe_init(struct sc_info *sc)
 {
 	long long period;
 
-	/* Set defaults. */
-	sc->ctrl_register |= HDSPM_CLOCK_MODE_MASTER;
-
 	/* Set latency. */
 	sc->period = 32;
 	sc->ctrl_register = hdspe_encode_latency(7);

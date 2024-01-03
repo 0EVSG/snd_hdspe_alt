@@ -105,7 +105,6 @@
 #define	HDSPE_CONTROL_REG		64
 #define	HDSPE_STATUS_REG		0
 #define	HDSPE_ENABLE			(1 << 0)
-#define	HDSPM_CLOCK_MODE_MASTER		(1 << 4)
 
 /* Interrupts */
 #define	HDSPE_AUDIO_IRQ_PENDING		(1 << 0)
