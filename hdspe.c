@@ -52,28 +52,28 @@ SYSCTL_BOOL(_hw_hdspe, OID_AUTO, unified_pcm, CTLFLAG_RWTUN,
     &hdspe_unified_pcm, 0, "Combine physical ports in one unified pcm device");
 
 static struct hdspe_clock_source hdspe_clock_source_table_rd[] = {
-	HDSPE_CLOCK_SOURCE("internal", 1,  0, 15,       0,       0),
-	HDSPE_CLOCK_SOURCE("word",     0,  0,  0, 1 << 24, 1 << 25),
-	HDSPE_CLOCK_SOURCE("aes",      0,  1,  1,  1 << 0,  1 << 8),
-	HDSPE_CLOCK_SOURCE("spdif",    0,  2,  2,  1 << 1,  1 << 9),
-	HDSPE_CLOCK_SOURCE("adat1",    0,  3,  3,  1 << 2, 1 << 10),
-	HDSPE_CLOCK_SOURCE("adat2",    0,  4,  4,  1 << 3, 1 << 11),
-	HDSPE_CLOCK_SOURCE("adat3",    0,  5,  5,  1 << 4, 1 << 12),
-	HDSPE_CLOCK_SOURCE("adat4",    0,  6,  6,  1 << 5, 1 << 13),
-	HDSPE_CLOCK_SOURCE("tco",      0,  9,  9, 1 << 26, 1 << 27),
-	HDSPE_CLOCK_SOURCE("sync_in",  0, 10, 10,       0,       0),
-	HDSPE_CLOCK_SOURCE(NULL,       0,  0,  0,       0,       0),
+	{ "internal", 0 << 1 | 1, HDSPE_STATUS1_CLOCK(15),       0,       0 },
+	{ "word",     0 << 1 | 0, HDSPE_STATUS1_CLOCK( 0), 1 << 24, 1 << 25 },
+	{ "aes",      1 << 1 | 0, HDSPE_STATUS1_CLOCK( 1),  1 << 0,  1 << 8 },
+	{ "spdif",    2 << 1 | 0, HDSPE_STATUS1_CLOCK( 2),  1 << 1,  1 << 9 },
+	{ "adat1",    3 << 1 | 0, HDSPE_STATUS1_CLOCK( 3),  1 << 2, 1 << 10 },
+	{ "adat2",    4 << 1 | 0, HDSPE_STATUS1_CLOCK( 4),  1 << 3, 1 << 11 },
+	{ "adat3",    5 << 1 | 0, HDSPE_STATUS1_CLOCK( 5),  1 << 4, 1 << 12 },
+	{ "adat4",    6 << 1 | 0, HDSPE_STATUS1_CLOCK( 6),  1 << 5, 1 << 13 },
+	{ "tco",      9 << 1 | 0, HDSPE_STATUS1_CLOCK( 9), 1 << 26, 1 << 27 },
+	{ "sync_in", 10 << 1 | 0, HDSPE_STATUS1_CLOCK(10),       0,       0 },
+	{ NULL,       0 << 1 | 0, HDSPE_STATUS1_CLOCK( 0),       0,       0 },
 };
 
 static struct hdspe_clock_source hdspe_clock_source_table_aio[] = {
-	HDSPE_CLOCK_SOURCE("internal", 1,  0, 15,       0,       0),
-	HDSPE_CLOCK_SOURCE("word",     0,  0,  0, 1 << 24, 1 << 25),
-	HDSPE_CLOCK_SOURCE("aes",      0,  1,  1,  1 << 0,  1 << 8),
-	HDSPE_CLOCK_SOURCE("spdif",    0,  2,  2,  1 << 1,  1 << 9),
-	HDSPE_CLOCK_SOURCE("adat",     0,  3,  3,  1 << 2, 1 << 10),
-	HDSPE_CLOCK_SOURCE("tco",      0,  9,  9, 1 << 26, 1 << 27),
-	HDSPE_CLOCK_SOURCE("sync_in",  0, 10, 10,       0,       0),
-	HDSPE_CLOCK_SOURCE(NULL,       0,  0,  0,       0,       0),
+	{ "internal", 0 << 1 | 1, HDSPE_STATUS1_CLOCK(15),       0,       0 },
+	{ "word",     0 << 1 | 0, HDSPE_STATUS1_CLOCK( 0), 1 << 24, 1 << 25 },
+	{ "aes",      1 << 1 | 0, HDSPE_STATUS1_CLOCK( 1),  1 << 0,  1 << 8 },
+	{ "spdif",    2 << 1 | 0, HDSPE_STATUS1_CLOCK( 2),  1 << 1,  1 << 9 },
+	{ "adat",     3 << 1 | 0, HDSPE_STATUS1_CLOCK( 3),  1 << 2, 1 << 10 },
+	{ "tco",      9 << 1 | 0, HDSPE_STATUS1_CLOCK( 9), 1 << 26, 1 << 27 },
+	{ "sync_in", 10 << 1 | 0, HDSPE_STATUS1_CLOCK(10),       0,       0 },
+	{ NULL,       0 << 1 | 0, HDSPE_STATUS1_CLOCK( 0),       0,       0 },
 };
 
 static struct hdspe_channel chan_map_aio[] = {
