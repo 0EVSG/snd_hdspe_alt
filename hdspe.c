@@ -383,12 +383,11 @@ hdspe_sysctl_clock_source(SYSCTL_HANDLER_ARGS)
 	/* Translate status register value to clock source. */
 	for (clock = clock_table; clock->name != NULL; ++clock) {
 		/* In clock master mode, override with internal clock source. */
-		if (sc->settings_register & HDSPE_SETTING_MASTER)
+		if (sc->settings_register & HDSPE_SETTING_MASTER) {
 			if (clock->setting & HDSPE_SETTING_MASTER)
 				break;
-		else
-			if (clock->status == status)
-				break;
+		} else if (clock->status == status)
+			break;
 	}
 
 	/* Process sysctl string request. */
