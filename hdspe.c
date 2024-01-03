@@ -346,7 +346,7 @@ hdspe_sysctl_clock_preference(SYSCTL_HANDLER_ARGS)
 
 	/* Set preferred clock source in settings register. */
 	if (clock->name != NULL) {
-		setting = clock->setting;
+		setting = clock->setting & HDSPE_SETTING_CLOCK_MASK;
 		snd_mtxlock(sc->lock);
 		sc->settings_register &= ~HDSPE_SETTING_CLOCK_MASK;
 		sc->settings_register |= setting;
@@ -374,19 +374,21 @@ hdspe_sysctl_clock_source(SYSCTL_HANDLER_ARGS)
 	else
 		return (ENXIO);
 
-	/* Read current clock source from status register. */
+	/* Read current (autosync) clock source from status register. */
 	snd_mtxlock(sc->lock);
-	if ((sc->settings_register & HDSPE_SETTING_MASTER) == 0) {
-		status = hdspe_read_4(sc, HDSPE_STATUS1_REG);
-		status &= HDSPE_STATUS1_CLOCK_MASK;
-	} else
-		status = hdspe_status1_clock(15);
+	status = hdspe_read_4(sc, HDSPE_STATUS1_REG);
+	status &= HDSPE_STATUS1_CLOCK_MASK;
 	snd_mtxunlock(sc->lock);
 
-	/* Translate clock source to clock source name. */
+	/* Translate status register value to clock source. */
 	for (clock = clock_table; clock->name != NULL; ++clock) {
-		if (clock->status == status)
-			break;
+		/* In clock master mode, override with internal clock source. */
+		if (sc->settings_register & HDSPE_SETTING_MASTER)
+			if (clock->setting & HDSPE_SETTING_MASTER)
+				break;
+		else
+			if (clock->status == status)
+				break;
 	}
 
 	/* Process sysctl string request. */
