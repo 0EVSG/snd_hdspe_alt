@@ -148,11 +148,11 @@ struct hdspe_channel {
 };
 
 /* Clock sources */
-#define HDSPE_SETTING_MASTER		1
-#define HDSPE_SETTING_CLOCK_MASK	0x1f
-#define hdspe_setting_clock(m, n)	((((n) & 0x0f) << 1) | ((m) & 0x01))
-#define HDSPE_STATUS1_CLOCK_MASK	(0x0f << 28)
-#define hdspe_status1_clock(n)		(((n) & 0x0f) << 28)
+#define	HDSPE_SETTING_MASTER		1
+#define	HDSPE_SETTING_CLOCK_MASK	0x1f
+#define	hdspe_setting_clock(m, n)	((((n) & 0x0f) << 1) | ((m) & 0x01))
+#define	HDSPE_STATUS1_CLOCK_MASK	(0x0f << 28)
+#define	hdspe_status1_clock(n)		(((n) & 0x0f) << 28)
 
 struct hdspe_clock_source {
 	char		*name;
@@ -162,7 +162,7 @@ struct hdspe_clock_source {
 	uint32_t	sync_bit;
 };
 
-#define HDSPE_CLOCK_SOURCE(string, master, setting_nr, status_nr, lock, sync) \
+#define	HDSPE_CLOCK_SOURCE(string, master, setting_nr, status_nr, lock, sync) \
 		{ \
 			.name = string, \
 			.setting = hdspe_setting_clock(master, setting_nr), \
