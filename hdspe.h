@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
  *
  * Copyright (c) 2012-2016 Ruslan Bukin <br@bsdpad.com>
+ * Copyright (c) 2023-2024 Florian Walpen <dev@submerge.ch>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
